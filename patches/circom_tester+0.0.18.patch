@@ -1,0 +1,31 @@
+diff --git a/node_modules/circom_tester/wasm/witness_calculator.js b/node_modules/circom_tester/wasm/witness_calculator.js
+old mode 100755
+new mode 100644
+index 7e1cccc..b0ff6cd
+--- a/node_modules/circom_tester/wasm/witness_calculator.js
++++ b/node_modules/circom_tester/wasm/witness_calculator.js
+@@ -145,6 +145,10 @@ class WitnessCalculator {
+ 		throw new Error(`Signal ${k} not found\n`);
+ 	    }
+ 	    if (fArr.length < signalSize) {
++				console.log({
++					signalSize,
++					fArr: fArr.length
++				})
+ 		throw new Error(`Not enough values for input signal ${k}\n`);
+ 	    }
+ 	    if (fArr.length > signalSize) {
+@@ -159,7 +163,7 @@ class WitnessCalculator {
+                     this.instance.exports.setInputSignal(hMSB, hLSB,i);
+ 		    input_counter++;
+ 		} catch (err) {
+-		    // console.log(`After adding signal ${i} of ${k}`)
++		    console.log(`After adding signal ${i} of ${k}`)
+                     throw new Error(err);
+ 		}
+             }
+@@ -277,3 +281,4 @@ class WitnessCalculator {
+ 
+ 
+ 
++

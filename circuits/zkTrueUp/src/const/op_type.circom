@@ -1,0 +1,29 @@
+pragma circom 2.1.5;
+
+function OpTypeNumNoop()              { return 0; }
+function OpTypeNumRegister()             { return 1; }
+function OpTypeNumDeposit()              { return 2; }
+function OpTypeNumForcedWithdraw()       { return 3; }
+function OpTypeNumTransfer()             { return 4; }
+function OpTypeNumWithdraw()             { return 5; }
+function OpTypeNumAuctionLend()          { return 6; }
+function OpTypeNumAuctionBorrow()        { return 7; }
+function OpTypeNumAuctionStart()         { return 8; }
+function OpTypeNumAuctionMatch()         { return 9; }
+function OpTypeNumAuctionEnd()           { return 10; }
+function OpTypeNumSecondLimitOrder()     { return 11; }
+function OpTypeNumSecondLimitStart()     { return 12; }
+function OpTypeNumSecondLimitExchange()  { return 13; }
+function OpTypeNumSecondLimitEnd()       { return 14; }
+function OpTypeNumSecondMarketOrder()    { return 15; }
+function OpTypeNumSecondMarketExchange() { return 16; }
+function OpTypeNumSecondMarketEnd()      { return 17; }
+function OpTypeNumAdminCancelOrder()     { return 18; }
+function OpTypeNumUserCancelOrder()      { return 19; }
+function OpTypeNumIncreaseEpoch()        { return 20; }
+function OpTypeNumCreateTSBToken()       { return 21; }
+function OpTypeNumRedeem()               { return 22; }
+function OpTypeNumWithdrawFee()          { return 23; }
+function OpTypeNumEvacuation()           { return 24; }
+function OpTypeNumSetAdminTsAddr()       { return 25; }
+function OpTypeCount()                   { return 26; }

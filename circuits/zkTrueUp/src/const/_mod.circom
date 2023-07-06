@@ -1,0 +1,105 @@
+pragma circom 2.1.5;
+
+include "bits.circom";
+include "fmt.circom";
+include "op_type.circom";
+
+function ConstFieldBits(){
+    return 253;
+}
+function ConstFieldBitsFull(){
+    return ConstFieldBits() + 1;
+}
+function ConstSecondsPerDay(){
+    return 86400;
+}
+function ConstIsAdminReq(){ 
+    return [
+        1,//Noop
+        1,//Register
+        1,//Deposit
+        1,//ForcedWithdraw
+        0,//Transfer
+        0,//Withdraw
+        0,//AuctionLend
+        0,//AuctionBorrow
+        1,//AuctionStart
+        1,//AuctionMatch
+        1,//AuctionEnd
+        0,//SecondLimitOrder
+        1,//SecondLimitStart
+        1,//SecondLimitExchange
+        1,//SecondLimitEnd
+        0,//SecondMarketOrder
+        1,//SecondMarketExchange
+        1,//SecondMarketEnd
+        1,//AdminCancel
+        0,//UserCancel
+        1,//IncreaseEpoch
+        1,//CreateBondToken
+        0,//Redeem
+        1,//WithdrawFee
+        1,//Evacuation
+        1 //SetAdminTsAddr
+    ];
+}
+function ConstChunkCount(){
+    return [
+        0,//Noop
+        3,//Register
+        2,//Deposit
+        2,//ForcedWithdraw
+        2,//Transfer
+        2,//Withdraw
+        3,//AuctionLend
+        3,//AuctionBorrow
+        1,//AuctionStart
+        1,//AuctionMatch
+        4,//AuctionEnd
+        4,//SecondLimitOrder
+        1,//SecondLimitStart
+        1,//SecondLimitExchange
+        1,//SecondLimitEnd
+        3,//SecondMarketOrder
+        1,//SecondMarketExchange
+        1,//SecondMarketEnd
+        1,//AdminCancel
+        1,//UserCancel
+        1,//IncreaseEpoch
+        1,//CreateBondToken
+        2,//Redeem
+        2,//WithdrawFee
+        2,//Evacuation
+        1 //SetAdminTsAddr
+    ];
+}
+function ConstIsCriticalReq(){
+    return [
+        0,//Noop
+        1,//Register
+        1,//Deposit
+        1,//ForcedWithdraw
+        0,//Transfer
+        1,//Withdraw
+        0,//AuctionLend
+        0,//AuctionBorrow
+        0,//AuctionStart
+        0,//AuctionMatch
+        1,//AuctionEnd
+        0,//SecondLimitOrder
+        0,//SecondLimitStart
+        0,//SecondLimitExchange
+        0,//SecondLimitEnd
+        0,//SecondMarketOrder
+        0,//SecondMarketExchange
+        0,//SecondMarketEnd
+        0,//AdminCancel
+        0,//UserCancel
+        0,//IncreaseEpoch
+        1,//CreateBondToken
+        0,//Redeem
+        1,//WithdrawFee
+        1,//Evacuation
+        0 //SetAdminTsAddr
+    ];
+}

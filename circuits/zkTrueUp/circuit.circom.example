@@ -1,0 +1,6 @@
+pragma circom 2.1.2;
+
+include "normal.circom";
+include "spec.circom";
+
+component main = Normal();

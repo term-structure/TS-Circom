@@ -1,0 +1,36 @@
+# node
+node_modules/
+.history/
+
+# hardhat
+cache
+artifacts
+
+# Ignore the output from circom because we want people to build these
+# Users can remove these lines and commit the artifacts
+circuits/zkTrueUp/*.r1cs
+circuits/zkTrueUp/*.vkey.json
+circuits/zkTrueUp/*.wasm
+circuits/zkTrueUp/*.zkey
+circuits/zkTrueUp/circuit.circom
+testdata
+testdata/**/*.r1cs
+testdata/**/*.vkey.json
+testdata/**/*.wasm
+testdata/**/*.zkey
+testdata/**/*.sym
+testdata/**/*.wtns
+testdata/**/*-proof.json
+testdata/**/*-public.json
+testdata/**/*_cpp
+testdata/**/*_js
+contracts/*.sol
+
+ptau/
+build/
+*.out
+*.log
+.DS_Store
+.DS_Store?
+*.local
+.env
