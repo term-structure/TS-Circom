@@ -1,4 +1,4 @@
-# circom-ecdsa
+# circom-zkTrueUp
 This repository contains an implementation of a zk circuit using circom, designed specifically for zkTrueUp.
 
 ## Test
