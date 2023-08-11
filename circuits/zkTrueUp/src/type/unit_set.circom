@@ -12,8 +12,8 @@ template UnitSet_Enforce(){
         Unit_Enforce(LenOfOrderLeaf(), OrderTreeHeight())(unit_set.orderUnits[i]);
     for(var i = 0; i < MaxFeeUnitsPerReq(); i++)
         Unit_Enforce(LenOfFeeLeaf(), FeeTreeHeight())(unit_set.feeUnits[i]);
-    for(var i = 0; i < MaxBondUnitsPerReq(); i++)
-        Unit_Enforce(LenOfBondLeaf(), BondTreeHeight())(unit_set.bondUnits[i]);
+    for(var i = 0; i < MaxTSBTokenUnitsPerReq(); i++)
+        Unit_Enforce(LenOfTSBTokenLeaf(), TSBTokenTreeHeight())(unit_set.tSBTokenUnits[i]);
     for(var i = 0; i < MaxNullifierUnitsPerReq(); i++)
         Unit_Enforce(LenOfNullifierLeaf(), NullifierTreeHeight())(unit_set.nullifierUnits[i]);
 }

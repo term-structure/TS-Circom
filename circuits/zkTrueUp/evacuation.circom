@@ -16,7 +16,10 @@ template CalcCommitment(){
     signal output commitment;
 
     var bits_slot = 256;
-    var target_len = bits_slot * 4 + (BitsChunk() + 8) * (NumOfChunksForEvacuation());
+    var bits_tag = 1;
+    assert((bits_tag * NumOfChunks()) % 8 == 0);
+    var chunkoffset_bitwise = ((NumOfChunksForEvacuation() + 8 - 1) \ 8) * 8;
+    var target_len = bits_slot * 4 + BitsChunk() * (NumOfChunksForEvacuation()) + chunkoffset_bitwise;
     signal target[5 + NumOfChunksForEvacuation() * 2][target_len];
     var idx = 0;
     var counter = 0;
@@ -33,13 +36,13 @@ template CalcCommitment(){
         idx += ConstFieldBitsFull();
     }
 
-    var bits_tag = 8;
     for(var i = 0; i < NumOfChunksForEvacuation(); i++){
         idx += bits_tag - 1;
         target[counter] <== Arr_CopyRange(target_len, idx, 1)(target[counter - 1], [isCriticalChunk[i]]);
         counter += 1;
         idx += 1;
     }
+    idx += chunkoffset_bitwise - bits_tag * NumOfChunksForEvacuation();
 
     for(var i = 0; i < NumOfChunksForEvacuation(); i++){
         target[counter] <== Arr_CopyRange(target_len, idx, BitsChunk())(target[counter - 1], Arr_Reverse(BitsChunk())(Num2Bits(BitsChunk())(chunks[i])));
@@ -70,21 +73,28 @@ template Evacuation(){
     VerifyExists(AccTreeHeight())(accId, PoseidonSpecificLen(LenOfAccLeaf())([tsAddr, nonce, tokenRoot]), accMkPrf, accRoot);
     VerifyExists(TokenTreeHeight())(tokenId, PoseidonSpecificLen(LenOfTokenLeaf())([avlAmt, lockedAmt]), tokenMkPrf, tokenRoot);
 
-    signal bits_opType[1 * 8] <== Num2Bits(1 * 8)(OpTypeNumEvacuation());
-    signal bits_accId[4 * 8] <== Num2Bits(4 * 8)(accId);
-    signal bits_tokenId[2 * 8] <== Num2Bits(2 * 8)(tokenId);
-    signal bits_amount[16 * 8] <== Num2Bits(16 * 8)(avlAmt + lockedAmt);
+    signal bits_opType[FmtOpcode()] <== Num2Bits(FmtOpcode())(OpTypeNumEvacuation());
+    signal bits_accId[FmtAccId()] <== Num2Bits(FmtAccId())(accId);
+    signal bits_tokenId[FmtTokenId()] <== Num2Bits(FmtTokenId())(tokenId);
+    signal bits_amount[FmtStateAmount()] <== Num2Bits(FmtStateAmount())(avlAmt + lockedAmt);
+
+    assert(FmtStateAmount() >= BitsAmount() + 1);
 
     signal bits_chunks[2* BitsChunk()];
-    for(var i = 0; i < 1 * 8; i++)
-        bits_chunks[i] <== bits_opType[1 * 8 - i - 1];
-    for(var i = 0; i < 4 * 8; i++)
-        bits_chunks[1 * 8 + i] <== bits_accId[4 * 8 - i - 1];
-    for(var i = 0; i < 2 * 8; i++)
-        bits_chunks[5 * 8 + i] <== bits_tokenId[2 * 8 - i - 1];
-    for(var i = 0; i < 16 * 8; i++)
-        bits_chunks[7 * 8 + i] <== bits_amount[16 * 8 - i - 1];
-    for(var i = 23 * 8; i < 2 * BitsChunk(); i++)
+    var sum = 0;
+    for(var i = 0; i < FmtOpcode(); i++)
+        bits_chunks[sum + i] <== bits_opType[FmtOpcode() - i - 1];
+    sum += FmtOpcode();
+    for(var i = 0; i < FmtAccId(); i++)
+        bits_chunks[sum + i] <== bits_accId[FmtAccId() - i - 1];
+    sum += FmtAccId();
+    for(var i = 0; i < FmtTokenId(); i++)
+        bits_chunks[sum + i] <== bits_tokenId[FmtTokenId() - i - 1];
+    sum += FmtTokenId();
+    for(var i = 0; i < FmtStateAmount(); i++)
+        bits_chunks[sum + i] <== bits_amount[FmtStateAmount() - i - 1];
+    sum += FmtStateAmount();
+    for(var i = sum; i < 2 * BitsChunk(); i++)
         bits_chunks[i] <== 0;
     signal chunks[NumOfChunksForEvacuation()];
     var tmp[BitsChunk()];

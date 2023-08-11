@@ -34,17 +34,17 @@ template Bool(){
     a * (1 - a) === 0;
 }
 function LenOfReq(){
-    return 17;
+    return 20;
 }
 template Req(){
     signal input arr[LenOfReq()];
-    signal output (opType, accId, tokenId, amount, nonce, fee0, fee1) <== (arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6]);
+    signal output (opType, accId, tokenId, amount, nonce, fee0, fee1, txFeeTokenId, txFeeAmt) <== (arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8]);
     signal output arg[LenOfReq() - 7] <== Slice(LenOfReq(), 7, LenOfReq() - 7)(arr);
 }
 template Req_Alloc(){
     signal input raw[LenOfReq()];
     signal output arr[LenOfReq()] <== raw;
-    var bits[LenOfReq()] = [BitsOpType(), BitsAccId(), BitsTokenId(), BitsUnsignedAmt(), BitsNonce(), BitsRatio(), BitsRatio(), BitsAccId(), BitsTime(), BitsTime(), BitsRatio(), BitsTokenId(), BitsUnsignedAmt(), BitsTsAddr(), BitsEpoch(), BitsSide(), BitsRatio()];
+    var bits[LenOfReq()] = [BitsOpType(), BitsAccId(), BitsTokenId(), BitsUnsignedAmt(), BitsNonce(), BitsRatio(), BitsRatio(), BitsTokenId(), BitsUnsignedAmt(), BitsAccId(), BitsTime(), BitsTime(), BitsRatio(), BitsTokenId(), BitsUnsignedAmt(), BitsTsAddr(), BitsEpoch(), BitsSide(), BitsRatio(), ConstFieldBitsFull()];
     for(var i = 0; i < LenOfReq(); i++)
         _ <== Num2Bits(bits[i])(arr[i]);
 }
@@ -64,7 +64,7 @@ function LenOfState(){
 }
 template State(){
     signal input arr[LenOfState()];
-    signal output (feeRoot, bondRoot, orderRoot, accRoot, nullifierRoot[2], epoch[2], adminTsAddr, txCount) <== (arr[0], arr[1], arr[2], arr[3], [arr[4], arr[5]], [arr[6], arr[7]], arr[8], arr[9]);
+    signal output (feeRoot, tSBTokenRoot, orderRoot, accRoot, nullifierRoot[2], epoch[2], adminTsAddr, txCount) <== (arr[0], arr[1], arr[2], arr[3], [arr[4], arr[5]], [arr[6], arr[7]], arr[8], arr[9]);
 }
 template State_Alloc(){
     signal input raw[LenOfState()];
@@ -214,36 +214,36 @@ template FeeUnit_Alloc(){
     _ <== FeeLeaf_Alloc()(fee_unit.oriLeaf);
     _ <== FeeLeaf_Alloc()(fee_unit.newLeaf);
 }
-function LenOfBondLeaf(){
+function LenOfTSBTokenLeaf(){
     return 2;
 }
-template BondLeaf(){
-    signal input arr[LenOfBondLeaf()];
+template TSBTokenLeaf(){
+    signal input arr[LenOfTSBTokenLeaf()];
     signal output (baseTokenId, maturity) <== (arr[0], arr[1]);
 }
-template BondLeaf_Alloc(){
-    signal input raw[LenOfBondLeaf()];
-    signal output arr[LenOfBondLeaf()] <== raw;
+template TSBTokenLeaf_Alloc(){
+    signal input raw[LenOfTSBTokenLeaf()];
+    signal output arr[LenOfTSBTokenLeaf()] <== raw;
     _ <== Num2Bits(BitsTokenId())(arr[0]);
     _ <== Num2Bits(BitsTime())(arr[1]);
 }
-function LenOfBondUnit(){
-    return LenOfUnit(LenOfBondLeaf(), BondTreeHeight());
+function LenOfTSBTokenUnit(){
+    return LenOfUnit(LenOfTSBTokenLeaf(), TSBTokenTreeHeight());
 }
-template BondUnit(){
-    signal input arr[LenOfBondUnit()];
+template TSBTokenUnit(){
+    signal input arr[LenOfTSBTokenUnit()];
     signal output leafId[1];
-    signal output oriLeaf[LenOfBondLeaf()], newLeaf[LenOfBondLeaf()];
-    signal output oriRoot[1], newRoot[1], mkPrf[BondTreeHeight()];
-    (leafId, oriLeaf, newLeaf, oriRoot, newRoot, mkPrf) <== Unit(LenOfBondLeaf(), BondTreeHeight())(arr);
+    signal output oriLeaf[LenOfTSBTokenLeaf()], newLeaf[LenOfTSBTokenLeaf()];
+    signal output oriRoot[1], newRoot[1], mkPrf[TSBTokenTreeHeight()];
+    (leafId, oriLeaf, newLeaf, oriRoot, newRoot, mkPrf) <== Unit(LenOfTSBTokenLeaf(), TSBTokenTreeHeight())(arr);
 }
-template BondUnit_Alloc(){
-    signal input raw[LenOfBondUnit()];
-    signal output arr[LenOfBondUnit()] <== raw;
-    component bond_unit = BondUnit();
-    bond_unit.arr <== arr;
-    _ <== BondLeaf_Alloc()(bond_unit.oriLeaf);
-    _ <== BondLeaf_Alloc()(bond_unit.newLeaf);
+template TSBTokenUnit_Alloc(){
+    signal input raw[LenOfTSBTokenUnit()];
+    signal output arr[LenOfTSBTokenUnit()] <== raw;
+    component tSBToken_unit = TSBTokenUnit();
+    tSBToken_unit.arr <== arr;
+    _ <== TSBTokenLeaf_Alloc()(tSBToken_unit.oriLeaf);
+    _ <== TSBTokenLeaf_Alloc()(tSBToken_unit.newLeaf);
 }
 function LenOfNullifierLeaf(){
     return 8;
@@ -264,7 +264,7 @@ function LenOfUnitSet(){
     LenOfAccUnit() * MaxAccUnitsPerReq() + 
     LenOfOrderUnit() * MaxOrderUnitsPerReq() + 
     LenOfFeeUnit() * MaxFeeUnitsPerReq() + 
-    LenOfBondUnit() * MaxBondUnitsPerReq() + 
+    LenOfTSBTokenUnit() * MaxTSBTokenUnitsPerReq() + 
     LenOfNullifierUnit() * MaxNullifierUnitsPerReq();
 }
 template UnitSet(){
@@ -273,9 +273,9 @@ template UnitSet(){
     signal output accUnits[MaxAccUnitsPerReq()][LenOfAccUnit()];
     signal output orderUnits[MaxOrderUnitsPerReq()][LenOfOrderUnit()];
     signal output feeUnits[MaxFeeUnitsPerReq()][LenOfFeeUnit()];
-    signal output bondUnits[MaxBondUnitsPerReq()][LenOfBondUnit()];
+    signal output tSBTokenUnits[MaxTSBTokenUnitsPerReq()][LenOfTSBTokenUnit()];
     signal output nullifierUnits[MaxNullifierUnitsPerReq()][LenOfNullifierUnit()];
-    var offsets[6] = [LenOfTokenUnit() * MaxTokenUnitsPerReq(), LenOfAccUnit() * MaxAccUnitsPerReq(), LenOfOrderUnit() * MaxOrderUnitsPerReq(), LenOfFeeUnit() * MaxFeeUnitsPerReq(), LenOfBondUnit() * MaxBondUnitsPerReq(), LenOfNullifierUnit() * MaxNullifierUnitsPerReq()];
+    var offsets[6] = [LenOfTokenUnit() * MaxTokenUnitsPerReq(), LenOfAccUnit() * MaxAccUnitsPerReq(), LenOfOrderUnit() * MaxOrderUnitsPerReq(), LenOfFeeUnit() * MaxFeeUnitsPerReq(), LenOfTSBTokenUnit() * MaxTSBTokenUnitsPerReq(), LenOfNullifierUnit() * MaxNullifierUnitsPerReq()];
 
     for (var i = 0; i < MaxTokenUnitsPerReq()     ; i++)
         tokenUnits[i]       <== Slice(LenOfUnitSet(), Cum(0, offsets) + i * LenOfTokenUnit()    , LenOfTokenUnit()    )(arr);
@@ -285,8 +285,8 @@ template UnitSet(){
         orderUnits[i]       <== Slice(LenOfUnitSet(), Cum(2, offsets) + i * LenOfOrderUnit()    , LenOfOrderUnit()    )(arr);
     for (var i = 0; i < MaxFeeUnitsPerReq()       ; i++)
         feeUnits[i]         <== Slice(LenOfUnitSet(), Cum(3, offsets) + i * LenOfFeeUnit()      , LenOfFeeUnit()      )(arr);
-    for (var i = 0; i < MaxBondUnitsPerReq()      ; i++)
-        bondUnits[i]        <== Slice(LenOfUnitSet(), Cum(4, offsets) + i * LenOfBondUnit()     , LenOfBondUnit()     )(arr);
+    for (var i = 0; i < MaxTSBTokenUnitsPerReq()      ; i++)
+        tSBTokenUnits[i]        <== Slice(LenOfUnitSet(), Cum(4, offsets) + i * LenOfTSBTokenUnit()     , LenOfTSBTokenUnit()     )(arr);
     for (var i = 0; i < MaxNullifierUnitsPerReq() ; i++)
         nullifierUnits[i]   <== Slice(LenOfUnitSet(), Cum(5, offsets) + i * LenOfNullifierUnit(), LenOfNullifierUnit())(arr);
 }
@@ -303,8 +303,8 @@ template UnitSet_Alloc(){
         _ <== OrderUnit_Alloc()(unit_set.orderUnits[i]);
     for (var i = 0; i < MaxFeeUnitsPerReq()       ; i++)
         _ <== FeeUnit_Alloc()(unit_set.feeUnits[i]);
-    for (var i = 0; i < MaxBondUnitsPerReq()      ; i++)   
-        _ <== BondUnit_Alloc()(unit_set.bondUnits[i]);
+    for (var i = 0; i < MaxTSBTokenUnitsPerReq()      ; i++)   
+        _ <== TSBTokenUnit_Alloc()(unit_set.tSBTokenUnits[i]);
     for (var i = 0; i < MaxNullifierUnitsPerReq() ; i++)
         _ <== NullifierUnit_Alloc()(unit_set.nullifierUnits[i]);
 }

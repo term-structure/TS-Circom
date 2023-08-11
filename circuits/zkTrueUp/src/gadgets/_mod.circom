@@ -92,7 +92,7 @@ template PoseidonSpecificLen(len){
 }
 template TsPubKey2TsAddr(){
     signal input in[2];
-    signal temp <== PoseidonSpecificLen(2)(in);
+    signal temp <== Poseidon(2)(in);
     signal n2B[ConstFieldBitsFull()] <== Num2Bits_strict()(temp);
     var t[160];
     for(var i = 0; i < 160; i++)

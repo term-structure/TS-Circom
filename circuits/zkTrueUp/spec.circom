@@ -19,7 +19,7 @@ function NumOfReqs(){
     return 3;
 }
 function NumOfChunks(){
-    return 31;
+    return 32;
 }
 
 function DefaultNullifierRoot(){
@@ -27,7 +27,7 @@ function DefaultNullifierRoot(){
     return 12657967895078469224578163781222964703015536623478048995515841804870723496262;
 }
 
-function BondTreeHeight(){
+function TSBTokenTreeHeight(){
     return TokenTreeHeight();
 }
 
@@ -49,7 +49,7 @@ function MaxNullifierUnitsPerReq(){
 function MaxFeeUnitsPerReq(){
     return 1;
 }
-function MaxBondUnitsPerReq(){
+function MaxTSBTokenUnitsPerReq(){
     return 1;
 }
 function MaxChunksPerReq(){

@@ -7,7 +7,7 @@ template AccLeaf_Register(){
     component acc = AccLeaf();
     acc.arr <== accLeaf;
 
-    signal output arr[LenOfAccLeaf()] <== AccLeaf_Alloc()([addr, acc.nonce, acc.tokens]);
+    signal output arr[LenOfAccLeaf()] <== [addr, acc.nonce, acc.tokens];
 }
 template AccLeaf_NonceIncrease(){
     signal input accLeaf[LenOfAccLeaf()];

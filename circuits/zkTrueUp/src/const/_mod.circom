@@ -36,7 +36,7 @@ function ConstIsAdminReq(){
         1,//AdminCancel
         0,//UserCancel
         1,//IncreaseEpoch
-        1,//CreateBondToken
+        1,//CreateTSBTokenToken
         0,//Redeem
         1,//WithdrawFee
         1,//Evacuation
@@ -50,7 +50,7 @@ function ConstChunkCount(){
         2,//Deposit
         2,//ForcedWithdraw
         2,//Transfer
-        2,//Withdraw
+        3,//Withdraw
         3,//AuctionLend
         3,//AuctionBorrow
         1,//AuctionStart
@@ -64,9 +64,9 @@ function ConstChunkCount(){
         1,//SecondMarketExchange
         1,//SecondMarketEnd
         1,//AdminCancel
-        1,//UserCancel
+        2,//UserCancel
         1,//IncreaseEpoch
-        1,//CreateBondToken
+        1,//CreateTSBTokenToken
         2,//Redeem
         2,//WithdrawFee
         2,//Evacuation
@@ -96,7 +96,7 @@ function ConstIsCriticalReq(){
         0,//AdminCancel
         0,//UserCancel
         0,//IncreaseEpoch
-        1,//CreateBondToken
+        1,//CreateTSBTokenToken
         0,//Redeem
         1,//WithdrawFee
         1,//Evacuation

@@ -47,7 +47,7 @@ template DoRequest(){
 
     // Dispatch
     signal channel[OpTypeCount()][LenOfChannel()];
-    channel[ 0] <== DoReqNoop           ()(TagIsEqual()([opType, OpTypeNumNoop()])              , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[ 0] <== DoReqNoop              ()(TagIsEqual()([opType, OpTypeNumNoop()])                 , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[ 1] <== DoReqRegister          ()(TagIsEqual()([opType, OpTypeNumRegister()])             , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[ 2] <== DoReqDeposit           ()(TagIsEqual()([opType, OpTypeNumDeposit()])              , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[ 3] <== DoReqForcedWithdraw    ()(TagIsEqual()([opType, OpTypeNumForcedWithdraw()])       , currentTime, channelIn, oriState, newState, preprocessedReq);
@@ -65,10 +65,10 @@ template DoRequest(){
     channel[15] <== DoReqSecondMarketOrder ()(TagIsEqual()([opType, OpTypeNumSecondMarketOrder()])    , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[16] <== DoReqInteract          ()(TagIsEqual()([opType, OpTypeNumSecondMarketExchange()]) , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[17] <== DoReqSecondMarketEnd   ()(TagIsEqual()([opType, OpTypeNumSecondMarketEnd()])      , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[18] <== DoReqCancel            ()(TagIsEqual()([opType, OpTypeNumAdminCancelOrder()])          , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[19] <== DoReqCancel            ()(TagIsEqual()([opType, OpTypeNumUserCancelOrder()])           , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[18] <== DoReqAdminCancel       ()(TagIsEqual()([opType, OpTypeNumAdminCancelOrder()])     , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[19] <== DoReqUserCancel        ()(TagIsEqual()([opType, OpTypeNumUserCancelOrder()])      , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[20] <== DoReqIncreaseEpoch     ()(TagIsEqual()([opType, OpTypeNumIncreaseEpoch()])        , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[21] <== DoReqCreateBondToken   ()(TagIsEqual()([opType, OpTypeNumCreateTSBToken()])      , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[21] <== DoReqCreateTSBTokenToken   ()(TagIsEqual()([opType, OpTypeNumCreateTSBToken()])       , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[22] <== DoReqRedeem            ()(TagIsEqual()([opType, OpTypeNumRedeem()])               , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[23] <== DoReqWithdrawFee       ()(TagIsEqual()([opType, OpTypeNumWithdrawFee()])          , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[24] <== DoReqEvacuation        ()(TagIsEqual()([opType, OpTypeNumEvacuation()])           , currentTime, channelIn, oriState, newState, preprocessedReq);
@@ -81,7 +81,9 @@ template CalcCommitment(){
     signal output commitment;
 
     var bits_slot = 256;
-    var target_len = bits_slot * 4 + (BitsChunk() + 8) * (NumOfChunks());
+    var bits_tag = 1;
+    assert((bits_tag * NumOfChunks()) % 8 == 0);
+    var target_len = bits_slot * 4 + (BitsChunk() + bits_tag) * (NumOfChunks());
     signal target[5 + NumOfChunks() * 2][target_len];
     var idx = 0;
     var counter = 0;
@@ -98,7 +100,6 @@ template CalcCommitment(){
         idx += ConstFieldBitsFull();
     }
 
-    var bits_tag = 8;
     for(var i = 0; i < NumOfChunks(); i++){
         idx += bits_tag - 1;
         target[counter] <== Arr_CopyRange(target_len, idx, 1)(target[counter - 1], [isCriticalChunk[i]]);
