@@ -11,15 +11,15 @@
         3.  The final output values are legal according to 2.
 
     For example,
-    Consider the following formula: $$debtAmt := principal * (PI * (days - 1) + one * (365 - (days - 1))) / (365 * one)$$
+    Consider the following formula: $$debtAmt := principal * (PIR * (days - 1) + one * (365 - (days - 1))) / (365 * one)$$
 
-    In this formula, if days is 367 and PI(principal and interest) is 90%, 
+    In this formula, if days is 367 and PIR(principal and interest) is 90%, 
     the term one * (365 - (days - 1)) may underflow. 
     
-    However, the term principal * (PI * (days - 1) + one * (365 - (days - 1))) will not underflow.
+    However, the term principal * (PIR * (days - 1) + one * (365 - (days - 1))) will not underflow.
 
-    Given our mechanism, we checked the lower limit of the PI when `PlaceOrder`, 
-    As a result, we have determined that the $principal * (PI * (days - 1) + one * (365 - (days - 1)))$ must be greater than 0.
+    Given our mechanism, we checked the lower limit of the PIR when `PlaceOrder`, 
+    As a result, we have determined that the $principal * (PIR * (days - 1) + one * (365 - (days - 1)))$ must be greater than 0.
 
     Next, we need to address the division operation, IntDivide(), to ensure both the divisor and dividend are valid. 
     To prevent overflow beyond 2^253 in the template used in this file, we make certain assumptions. 
@@ -29,9 +29,9 @@
 
     Most of the time, we satisfy this condition by performing the input signal check in UnitSet_Enforce() in normal.circom.
     
-    For example, in the formula: $$debtAmt := principal * (PI * (days - 1) + one * (365 - (days - 1))) / (365 * one)$$
+    For example, in the formula: $$debtAmt := principal * (PIR * (days - 1) + one * (365 - (days - 1))) / (365 * one)$$
     We need to assume the following:
-        1.  `PI` is within `BitsRatio()` bits.
+        1.  `PIR` is within `BitsRatio()` bits.
         2.  `principal` is within `BitsAmount()` bits.
         3.  `days` is within 15 bits.
 
@@ -54,36 +54,36 @@ function BitsDays(){
 
 /*
     This template assumes that the input signal has been checked to meet the following:
-    1. `PI` is within `BitsRatio()` bits.
+    1. `PIR` is within `BitsRatio()` bits.
     2. `principal` is within `BitsAmount()` bits.
     3. `days` is within 15 bits.
     
-    $$debtAmt := principal * (PI * (days - 1) + one * (365 - (days - 1))) / (365 * one)$$
+    $$debtAmt := principal * (PIR * (days - 1) + one * (365 - (days - 1))) / (365 * one)$$
 
 */
 template AuctionCalcDebtAmt(){
-    signal input PI;
+    signal input PIR;
     signal input principal;
     signal input days;
     signal output debtAmt;
     var one = 10 ** 8;
 
-    // Because the 'AuctionLend', 'AuctionBorrow' includes a check for the 'interest lower limit', `numeratorOfScaledPI` cannot possibly underflow.
-    signal numeratorOfScaledPI <== PI * (days - 1) + one * (365 - (days - 1));
+    // Because the 'AuctionLend', 'AuctionBorrow' includes a check for the 'interest lower limit', `numeratorOfScaledPIR` cannot possibly underflow.
+    signal numeratorOfScaledPIR <== PIR * (days - 1) + one * (365 - (days - 1));
 
     // Overflow check
     assert((BitsRatio() + BitsAmount() + BitsDays()) <= ConstFieldBits());
     // Underflow check
-    //      the `numeratorOfScaledPI` cannot possibly underflow 
-    //      => `principal * numeratorOfScaledPI` cannot possibly underflow.
-    (debtAmt, _) <== IntDivide(BitsAmount())(principal * numeratorOfScaledPI, one * 365); 
+    //      the `numeratorOfScaledPIR` cannot possibly underflow 
+    //      => `principal * numeratorOfScaledPIR` cannot possibly underflow.
+    (debtAmt, _) <== IntDivide(BitsAmount())(principal * numeratorOfScaledPIR, one * 365); 
 }
 
 /*
     This template assumes that the input signal has been checked to meet the following:
     1. `feeRate` is within `BitsRatio()` bits.
     2. `matchedBorrowingAmt` is within `BitsAmount()` bits.
-    3. `matchedPI` is within `BitsRatio()` bits.
+    3. `matchedPIR` is within `BitsRatio()` bits.
     4. `days` is within 15 bits.
     
     $$fee := matchedBorrowingAmt * |interest| * feeRate * (days - 1) / (365 * one * one)$$
@@ -92,34 +92,34 @@ template AuctionCalcDebtAmt(){
 template AuctionCalcFee(){
     signal input feeRate;
     signal input matchedBorrowingAmt;
-    signal input matchedPI;
+    signal input matchedPIR;
     signal input days;
     signal output fee;
     var one = 10 ** 8;
 
-    signal slt <== TagLessThan(BitsRatio())([matchedPI, one]);
-    signal absInterest <== (2 * slt - 1)* (one - matchedPI);
+    signal slt <== TagLessThan(BitsRatio())([matchedPIR, one]);
+    signal absInterestRate <== (2 * slt - 1)* (one - matchedPIR);
 
     // Because the 'AuctionLend', 'AuctionBorrow' includes a check for the "days > 1", `numeratorOfScaledFeeRate` cannot possibly underflow.
     signal numeratorOfScaledFeeRate <== feeRate * (days - 1);
-    signal absInterest_numeratorOfScaledFeeRate_Product <== absInterest * numeratorOfScaledFeeRate;
+    signal absInterestRate_numeratorOfScaledFeeRate_Product <== absInterestRate * numeratorOfScaledFeeRate;
 
     // Overflow check
     assert((BitsAmount() + BitsRatio() + BitsRatio() + BitsDays()) <= ConstFieldBits());
     // Underflow check: obviously
-    (fee, _) <== IntDivide(BitsAmount())(matchedBorrowingAmt * absInterest_numeratorOfScaledFeeRate_Product, one * one * 365);
+    (fee, _) <== IntDivide(BitsAmount())(matchedBorrowingAmt * absInterestRate_numeratorOfScaledFeeRate_Product, one * one * 365);
 }
 
 /*
-    PI := the max lender PI matched to the same borrower
+    PIR := the max lender PIR matched to the same borrower
     
     This template assumes that the input signal has been checked to meet the following:
-    1. `PI` is within `BitsRatio()` bits.
+    1. `PIR` is within `BitsRatio()` bits.
     2. `days` is within 15 bits.
     3. `xxxxAmt` is within `BitsAmount()` bits.
 
     $$ matchedLendingAmt := Min(LendingAmt - oriCumLendingAmt, BorrowingAmt) $$
-    $$ matchedTSBTokenAmt := \lfloor \frac {matchedBorrowAmt * (PI * days + one * (365 - days))}{(365 * one)} \rfloor $$
+    $$ matchedTSBTokenAmt := \lfloor \frac {matchedBorrowAmt * (PIR * days + one * (365 - days))}{(365 * one)} \rfloor $$
     
     $$ newCumLendingAmt := oriCumLendingAmt + matchedLendingAmt $$
     $$ newCumTSBTokenAmt := oriCumTSBTokenAmt + matchedTSBTokenAmt $$
@@ -134,7 +134,7 @@ template AuctionCalcFee(){
 */
 template AuctionMechanism(){
     signal input enabled;
-    signal input PI;
+    signal input PIR;
     signal input LendingAmt, BorrowingAmt, CollateralAmt;
     
     signal input oriCumLendingAmt, oriCumTSBTokenAmt, oriCumBorrowingAmt, oriCumCollateralAmt;
@@ -147,8 +147,8 @@ template AuctionMechanism(){
     
     // $$ matchedLendingAmt := Min(LendingAmt - oriCumLendingAmt, BorrowingAmt) $$
     signal matchedAmt <== Min(BitsAmount())([LendingAmt - oriCumLendingAmt, BorrowingAmt - oriCumBorrowingAmt]);
-    // $$ matchedTSBTokenAmt := \lfloor \frac {matchedBorrowAmt * (PI * days + one * (365 - days))}{(365 * one)} \rfloor $$
-    signal matchedTSBTokenAmt <== AuctionCalcDebtAmt()(PI * enabled, matchedAmt * enabled, days * enabled);
+    // $$ matchedTSBTokenAmt := \lfloor \frac {matchedBorrowAmt * (PIR * days + one * (365 - days))}{(365 * one)} \rfloor $$
+    signal matchedTSBTokenAmt <== AuctionCalcDebtAmt()(PIR * enabled, matchedAmt * enabled, days * enabled);
 
     // $$ newCumLendingAmt := oriCumLendingAmt + matchedLendingAmt $$
     newCumLendingAmt <== oriCumLendingAmt + matchedAmt;
@@ -348,9 +348,9 @@ template SecondMechanism(){
 /*
     fee rules:
     1. lend order
-        $$Fee := \lfloor \frac{matchedLendingAmt * defaultPI * feeRate * (days - 1)}{364 * one * one} \rfloor$$
+        $$Fee := \lfloor \frac{matchedLendingAmt * defaultPIR * feeRate * (days - 1)}{364 * one * one} \rfloor$$
     2. borrow order
-        $$Fee := \lfloor \frac{matchedBorrowingAmt * matchedPI * feeRate * (days - 1)}{364 * one * one} \rfloor$$
+        $$Fee := \lfloor \frac{matchedBorrowingAmt * matchedPIR * feeRate * (days - 1)}{364 * one * one} \rfloor$$
     3. secondary order
         $$Fee := \lfloor \frac{matchedMQ * feeRate * days}{364 * one} \rfloor$$
 
@@ -371,11 +371,11 @@ template CalcFee(){
     var matched_amt0 = new_order.cumAmt0 - oriCumAmt0;
     var matched_amt1 = new_order.cumAmt1 - oriCumAmt1;
 
-    // $$Fee := \lfloor \frac{matchedLendingAmt * defaultPI * feeRate * (days - 1)}{364 * one * one} \rfloor$$
+    // $$Fee := \lfloor \frac{matchedLendingAmt * defaultPIR * feeRate * (days - 1)}{364 * one * one} \rfloor$$
     signal feeIfLend <== AuctionCalcFee()(req.fee0, matched_amt0, arg, DaysFrom()(matchedTime, req.arg[1]));
     signal feeAsLend <== feeIfLend * isLend;
     
-    // $$Fee := \lfloor \frac{matchedBorrowingAmt * matchedPI * feeRate * (days - 1)}{364 * one * one} \rfloor$$
+    // $$Fee := \lfloor \frac{matchedBorrowingAmt * matchedPIR * feeRate * (days - 1)}{364 * one * one} \rfloor$$
     signal feeIfBorrow <== AuctionCalcFee()(req.fee0, matched_amt1, arg, DaysFrom()(matchedTime, req.arg[1]));
     signal feeAsBorrow <== feeIfBorrow * isBorrow;
 
@@ -394,7 +394,7 @@ template CalcFee(){
 }
 
 template AuctionInteract(){
-    signal input oriLend[LenOfOrderLeaf()], oriBorrow[LenOfOrderLeaf()], matchedPI, days;
+    signal input oriLend[LenOfOrderLeaf()], oriBorrow[LenOfOrderLeaf()], matchedPIR, days;
     signal output newLend[LenOfOrderLeaf()], newBorrow[LenOfOrderLeaf()];
     signal output {bool} isMatched;
     component lend = OrderLeaf();
@@ -410,12 +410,12 @@ template AuctionInteract(){
     // Matching condition:
     // 1. lend_req.arg[1] == borrow_req.arg[1] (maturity time)
     // 2. lend_req.tokenId == borrow_req.arg[4] (lending token id)
-    // 3. lend_req.arg[3] >= borrow_req.arg[3] (PI)
-    isMatched <== And()(TagIsEqual()([lend_req.arg[1]/* maturity time */, borrow_req.arg[1]/* maturity time */]), And()(TagIsEqual()([lend_req.tokenId, borrow_req.arg[4]/* borrowing token id */]), TagGreaterEqThan(BitsRatio())([borrow_req.arg[3]/* PI */, lend_req.arg[3]/* PI */])));
+    // 3. lend_req.arg[3] >= borrow_req.arg[3] (PIR)
+    isMatched <== And()(TagIsEqual()([lend_req.arg[1]/* maturity time */, borrow_req.arg[1]/* maturity time */]), And()(TagIsEqual()([lend_req.tokenId, borrow_req.arg[4]/* borrowing token id */]), TagGreaterEqThan(BitsRatio())([borrow_req.arg[3]/* PIR */, lend_req.arg[3]/* PIR */])));
     
     // exec auction mechanism
     signal newCumLendingAmt, newCumTSBTokenAmt, newCumBorrowingAmt, newCumCollateralAmt;
-    (newCumLendingAmt, newCumTSBTokenAmt, newCumBorrowingAmt, newCumCollateralAmt) <== AuctionMechanism()(enabled, matchedPI, lend_req.amount, borrow_req.arg[5], borrow_req.amount, lend.cumAmt0, lend.cumAmt1, borrow.cumAmt1, borrow.cumAmt0, days);
+    (newCumLendingAmt, newCumTSBTokenAmt, newCumBorrowingAmt, newCumCollateralAmt) <== AuctionMechanism()(enabled, matchedPIR, lend_req.amount, borrow_req.arg[5], borrow_req.amount, lend.cumAmt0, lend.cumAmt1, borrow.cumAmt1, borrow.cumAmt0, days);
     
     // output the execution result
     newLend <== OrderLeaf_Place()(lend.req, newCumLendingAmt * enabled, newCumTSBTokenAmt * enabled, lend.txId * enabled, lend.lockedAmt * enabled);

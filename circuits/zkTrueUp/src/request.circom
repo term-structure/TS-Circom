@@ -273,10 +273,10 @@ template DoReqNoop(){
     This template is used to verify Register requests.
 
     Items that require verification: 
-    1. Backend constructs l2 admin request: Register
+    1. Backend constructs L1 requests: Register
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
-    3. Backend checks if the account leaf is default	   
+    3. Backend checks the default valud of the account leaf	   
     4. Backend updates the account leaf	   
 
 */
@@ -294,7 +294,7 @@ template DoReqRegister(){
 
     /* legality */
 
-    //  3. Backend checks if the account leaf is default
+    //  3. Backend checks the default valud of the account leaf
     AccLeaf_EnforceDefault()(conn.accLeaf[0][0], enabled);
 
     /* correctness */
@@ -314,7 +314,7 @@ template DoReqRegister(){
     This template is used to verify Deposit requests.
 
     Items that require verification:
-    1. Backend constructs l2 admin request: Deposit
+    1. Backend constructs L1 requests: Deposit
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     2. Backend updates the token leaf
@@ -351,12 +351,12 @@ template DoReqDeposit(){
     This template is used to verify Transfer requests.
 
     Items that require verification:
-    0. Backend receives a signed l2 user request: Transfer from a user
+    0. Backend receives a signed L2 user request: Transfer from a user
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     1. Backend checks if the sender has enough balance
-    2. Backend checks if nonce is correct
-    3. Backend updates sender's account leaf and token leaves
+    2. Backend checks if the nonce is correct
+    3. Backend updates the sender's account leaf and token leaves
     4. Backend updates receiver's token leaves
 
 */
@@ -377,12 +377,12 @@ template DoReqTransfer(){
     // 1. Backend checks if the sender has enough balance
     TokenLeaf_SufficientCheck()(conn.tokenLeaf[0][0], enabled, req.amount);
 
-    // 2. Backend checks if nonce is correct
+    // 2. Backend checks if the nonce is correct
     AccLeaf_NonceCheck()(conn.accLeaf[0][0], enabled, req.nonce);
 
     /* correctness */
 
-    // 3. Backend updates sender's account leaf and token leaves
+    // 3. Backend updates the sender's account leaf and token leaves
     ImplyEq()(enabled, conn.accLeafId[0], req.accId);
     ImplyEq()(enabled, conn.tokenLeafId[0], req.tokenId);
     ImplyEqArr(LenOfAccLeaf())(enabled, AccLeaf_NonceIncrease()(AccLeaf_MaskTokens()(conn.accLeaf[0][0])), AccLeaf_MaskTokens()(conn.accLeaf[0][1]));
@@ -406,13 +406,13 @@ template DoReqTransfer(){
     This template is used to verify Withdraw requests.
 
     Items that require verification:
-    0. Backend receives a signed l2 user request: Withdraw from a user
+    0. Backend receives a signed L2 user request: Withdraw from a user
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     1. Backend checks if the sender has enough balance to withdraw
-    2. Backend checks if the sender has enough balance for fee
-    3. Backend checks if nonce is correct
-    4. Backend updates sender's account leaf and token leaves
+    2. Backend checks if the sender has enough balance for the fee
+    3. Backend checks if the nonce is correct
+    4. Backend updates the sender's account leaf and token leaves
 
 */
 template DoReqWithdraw(){
@@ -424,29 +424,32 @@ template DoReqWithdraw(){
     p_req.arr <== preprocessedReq;
     component req = Req();
     req.arr <== p_req.req;
-    component conn = Conn(0, 0, 0, 1, 0, 2, 0, 0);// Update acc leaf once and token leaf twice
+    component conn = Conn(1, 0, 0, 1, 0, 2, 0, 0);// Update fe leaf one, acc leaf once and token leaf twice
     (conn.enabled, conn.oriState, conn.newState, conn.unitSet, conn.nullifierTreeId) <== (enabled, oriState, newState, p_req.unitSet, p_req.nullifierTreeId[0]);
 
     /* legality */
     
-    // 3. Backend checks if nonce is correct
+    // 3. Backend checks if the nonce is correct
     AccLeaf_NonceCheck()(conn.accLeaf[0][0], enabled, req.nonce);
 
     // 1. Backend checks if the sender has enough balance to withdraw
     TokenLeaf_SufficientCheck()(conn.tokenLeaf[0][0], enabled, req.amount);
 
-    // 2. Backend checks if the sender has enough balance for fee
+    // 2. Backend checks if the sender has enough balance for the fee
     TokenLeaf_SufficientCheck()(conn.tokenLeaf[1][0], enabled, req.txFeeAmt);
 
     /* correctness */
 
-    // 4. Backend updates sender's account leaf and token leaves
+    // 4. Backend updates the sender's account leaf and token leaves
     ImplyEq()(enabled, conn.accLeafId[0], req.accId);
     ImplyEq()(enabled, conn.tokenLeafId[0], req.tokenId);
     ImplyEq()(enabled, conn.tokenLeafId[1], req.txFeeTokenId);
     ImplyEqArr(LenOfAccLeaf())(enabled, AccLeaf_NonceIncrease()(AccLeaf_MaskTokens()(conn.accLeaf[0][0])), AccLeaf_MaskTokens()(conn.accLeaf[0][1]));
     ImplyEqArr(LenOfTokenLeaf())(enabled, TokenLeaf_Outgoing()(conn.tokenLeaf[0][0], enabled, req.amount), conn.tokenLeaf[0][1]);
     ImplyEqArr(LenOfTokenLeaf())(enabled, TokenLeaf_Outgoing()(conn.tokenLeaf[1][0], enabled, req.txFeeAmt), conn.tokenLeaf[1][1]);
+    
+    ImplyEq()(enabled, conn.feeLeafId[0], req.txFeeTokenId);
+    ImplyEqArr(LenOfFeeLeaf())(enabled, FeeLeaf_Incoming()(conn.feeLeaf[0][0], enabled, req.txFeeAmt), conn.feeLeaf[0][1]);
 
     signal packedTxFeeAmt <== Fix2FloatCond()(enabled, req.txFeeAmt);
     Chunkify(6, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtStateAmount(), FmtTokenId(), FmtPacked()])(enabled, p_req.chunks, [req.opType, conn.accLeafId[0], req.tokenId, req.amount, req.txFeeTokenId, packedTxFeeAmt]);
@@ -460,7 +463,7 @@ template DoReqWithdraw(){
     This template is used to verify ForcedWithdraw requests.
 
     Items that require verification:
-    1. Backend constructs l2 admin request: ForceWithdraw
+    1. Backend constructs L1 requests: ForceWithdraw
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     2. Backend updates the token leaf
@@ -500,82 +503,82 @@ template DoReqForcedWithdraw(){
 
     --------------------------------
     Items that require verification for AuctionBorrow:
-    AB-0. Backend receives a signed l2 user request: AuctionBorrow from a user
+    AB-0. Backend receives a signed L2 user request: AuctionBorrow from a user
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     AB-1. Check if the market exists
-    AB-2. Check if borrowingAmt, feeRate, collateralAmt, PI can be converted to floating point numbers
-    AB-3. Check for duplicate orders
+    AB-2. Check if borrowingAmt, feeRate, collateralAmt, PIR can be converted to floating point numbers
+    AB-3. Check if duplicated orders exist
     AB-5. Check if expiredTime is legal
-    AB-6. Check if it's expired
-    AB-7. Check the lower limit of PI
-        *   In this template, read request based on this format. So PI must be greater than zero.
+    AB-6. Check if the order is expired
+    AB-7. Check interest lower limit
+        *   In this template, read request based on this format. So PIR must be greater than zero.
         *   This template implements the second lower limit restriction.
-                (PI / one) > (-365 / (daysFromMatched - 1))
-                => (PI * daysFromMatched - PI) > (-365 * one)
-                => (PI * daysFromMatched + 365 * one) > PI
-    AB-10.Check if there is enough money in the wallet for collateral
-    AB-11.Backend updates sender's token leaf
+                (PIR / one) > (-365 / (daysFromMatched - 1))
+                => (PIR * daysFromMatched - PIR) > (-365 * one)
+                => (PIR * daysFromMatched + 365 * one) > PIR
+    AB-10.Check if there is enough asset as collateral in the wallet
+    AB-11.Backend updates the sender's token leaf
 |   AB-12.Backend updates nullifier
-    AB-13.Backend adds this order to the list
+    AB-13.Backend adds this order to the order list
 
     Locked amount for AuctionBorrow (Collateral):
-    $$ lockedFeeAmt := lendAmt * \lfloor \frac {defaultMatchedPI * (d_OTM - 1)}{365} \rfloor $$
+    $$ lockedFeeAmt := lendAmt * \lfloor \frac {defaultMatchedPIR * (d_OTM - 1)}{365} \rfloor $$
     $$ lockedAmt = lendAmt + lockedFeeAmt $$
 
     --------------------------------
     Items that require verification for AuctionLend:
-    AL-0. Backend receives a signed l2 user request: AuctionLend from a user	(?req format)	Y	Check signature
+    AL-0. Backend receives a signed L2 user request: AuctionLend from a user
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     AL-1. Check if the market exists
-    AL-2. Check if lendingAmt, feeRate, defaultPI can be converted to floating point numbers
-    AL-3. Check for duplicate orders
-    AL-5. Check if t_e is legal
-    AL-6. Check if it's expired
-    AL-7. Check the lower limit of PI
-        *   In this template, read request based on this format. So PI must be greater than zero.
+    AL-2. Check if lendingAmt, feeRate, defaultPIR can be converted to floating point numbers
+    AL-3. Check if duplicated orders exist
+    AL-5. Check if t_e is valid
+    AL-6. Check if the order is expired
+    AL-7. Check interest lower limit
+        *   In this template, read request based on this format. So PIR must be greater than zero.
         *   This template implements the second lower limit restriction.
-                ((PI - one) / one) > (-365 / (daysFromMatched - 1))
-                => (PI - one) * (daysFromMatched - 1) > -365 * one
-                => (PI * daysFromMatched - daysFromMatched * one - PI + one) > (-365 * one)
-                => (PI * daysFromMatched + 366 * one) > daysFromMatched * one + PI
-    AL-8. Check if there is enough money in the wallet for lending
-    AL-9. Backend updates sender's token leaf
+                ((PIR - one) / one) > (-365 / (daysFromMatched - 1))
+                => (PIR - one) * (daysFromMatched - 1) > -365 * one
+                => (PIR * daysFromMatched - daysFromMatched * one - PIR + one) > (-365 * one)
+                => (PIR * daysFromMatched + 366 * one) > daysFromMatched * one + PIR
+    AL-8. Check if there is enough asset in the wallet for lending
+    AL-9. Backend updates the sender's token leaf
 |   AL-10.Backend updates nullifier
-    AL-11.Backend adds this order to the list
+    AL-11.Backend adds this order to the order list
 
     Locked amount for AuctionLend (Lending Token):
     $$ lockedAmt = collateralAmt $$
 
     --------------------------------
     Items that require verification for SecondLimitOrder:
-    SL-0. Backend receives a signed l2 user request: SecondLimitOrder from a user
+    SL-0. Backend receives a signed L2 user request: SecondLimitOrder from a user
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     SL-1. Check if the market exists
     SL-2. Check if MQ, BQ, feeRate can be converted to floating point numbers
-    SL-3. Check for duplicate orders
-    SL-5. Check if t_e is legal
-    SL-6. Check if it's expired
-    SL-7. Check the lower limit of PI
-        *   In this template, read request based on this format. So PI must be greater than zero.
+    SL-3. Check if duplicated orders exist
+    SL-5. Check if t_e is valid
+    SL-6. Check if the order is expired
+    SL-7. Check interest lower limit
+        *   In this template, read request based on this format. So PIR must be greater than zero.
         *   This template implements the second lower limit restriction.
                 (MQ / BQ - 1) > (-365 / daysFromMatched)
                 => ((MQ - BQ) * daysFromMatched) > (-365 * BQ)
                 => (MQ * daysFromMatched + 365 * BQ) > (BQ * daysFromMatched)
-    SL-9. If it's a buyer's order, check if there's enough BQ in the wallet
-    SL-10.If it's a seller's order, check if there's enough MQ in the wallet
-    SL-11.If it's a buyer, lock BQ
-    SL-12.If it's a seller, lock MQ
-|   AB-13.Backend updates nullifier
-    SL-14.Backend adds this order to the list
+    SL-9. If it is a buyer's order, check if there's enough BQ in the wallet
+    SL-10.If it is a seller's order, check if there's enough MQ in the wallet
+    SL-11.If it is a buyer, lock BQ
+    SL-12.If it is a seller, lock MQ
+|   SL-13.Backend updates nullifier
+    SL-14.Backend adds this order to the order list
 
     Locked amount for SecondLimitOrder (Base Token):
     (buy side)
     $$ days := 
         \begin{cases}
-            d_{ETM}&, PI < 0 \\
+            d_{ETM}&, PIR < 0 \\
             d_{OTM}&, otherwise \\
         \end{cases}
     $$
@@ -613,12 +616,13 @@ template DoReqPlaceOrder(){
     // Please refer to the lockedAmt formula for each request mentioned above.
     signal daysFromMatched <== DaysFrom()(p_req.matchedTime[0], tSBToken.maturity);
     signal daysFromExpired <== Req_DaysFromExpired()(p_req.req, tSBToken.maturity);
-    signal isNegPIIf2ndBuy <== And()(is2ndBuy, TagLessThan(BitsAmount())([req.arg[5]/*target amout*/, req.amount]));
+    signal isNegPIRIf2ndBuy <== And()(is2ndBuy, TagLessThan(BitsAmount())([req.arg[5]/*target amout*/, req.amount]));
 
-    signal lockFeeAmtIfLend <== AuctionCalcFee()(req.fee0, req.amount, req.arg[9]/*default PI*/, daysFromMatched);
+    var one = 10 ** 8;
+    signal lockFeeAmtIfLend <== AuctionCalcFee()(req.fee0, req.amount, req.arg[9] + one/*default PIR*/, daysFromMatched);
     var lockAmtIfLend = req.amount + lockFeeAmtIfLend;
     signal expectedSellAmtIf2ndBuy <== CalcNewBQ()(enabled, req.arg[5]/*target amout*/, req.arg[5]/*target amout*/, req.amount, daysFromExpired);
-    signal lockFeeIf2ndBuy <== SecondCalcFee()(req.arg[5]/*target amout*/, Max(BitsRatio())([req.fee0, req.fee1]), Mux(2)([daysFromExpired, daysFromMatched], isNegPIIf2ndBuy));
+    signal lockFeeIf2ndBuy <== SecondCalcFee()(req.arg[5]/*target amout*/, Max(BitsRatio())([req.fee0, req.fee1]), Mux(2)([daysFromMatched, daysFromExpired], isNegPIRIf2ndBuy));
     signal lockAmtIf2ndBuy <== expectedSellAmtIf2ndBuy + lockFeeIf2ndBuy;
     signal lock_amt <== Mux(4)([lockAmtIfLend, req.amount, lockAmtIf2ndBuy, req.amount], isLend * 0 + isBorrow * 1 + is2ndBuy * 2 + is2ndSell * 3);
     assert(BitsAmount() + 1 <= ConstFieldBits());
@@ -626,20 +630,20 @@ template DoReqPlaceOrder(){
 
     /* legality */
 
-    // AB-10.Check if there is enough money in the wallet for collateral
-    // AL-8. Check if there is enough money in the wallet for lending
-    // SL-9. If it's a buyer's order, check if there's enough BQ in the wallet
-    // SL-10.If it's a seller's order, check if there's enough MQ in the wallet
+    // AB-10.Check if there is enough asset as collateral in the wallet
+    // AL-8. Check if there is enough asset in the wallet for lending
+    // SL-9. If it is a buyer's order, check if there's enough BQ in the wallet
+    // SL-10.If it is a seller's order, check if there's enough MQ in the wallet
     TokenLeaf_SufficientCheck()(conn.tokenLeaf[0][0], enabled, lock_amt);
     
-    // AB-6. Check if it's expired
-    // AL-6. Check if it's expired
-    // SL-6. Check if it's expired
+    // AB-6. Check if the order is expired
+    // AL-6. Check if the order is expired
+    // SL-6. Check if the order is expired
     Req_CheckExpiration()(p_req.req, enabled, p_req.matchedTime[0]);
     
-    // AB-3. Check for duplicate orders
-    // AL-3. Check for duplicate orders
-    // SL-3. Check for duplicate orders
+    // AB-3. Check if duplicated orders exist
+    // AL-3. Check if duplicated orders exist
+    // SL-3. Check if duplicated orders exist
     ImplyEq()(enabled, req.arg[7]/*epoch*/, Mux(2)([conn.epoch[0][0], conn.epoch[1][0]], p_req.nullifierTreeId[0]));
     NullifierLeaf_CheckCollision()(conn.nullifierLeaf[0][0], enabled, digest);
     ImplyEq()(enabled, 0, Mux(LenOfNullifierLeaf())(conn.nullifierLeaf[0][0], p_req.nullifierElemId[0]));
@@ -649,22 +653,22 @@ template DoReqPlaceOrder(){
     ImplyEq()(enabled, 1, TagLessThan(BitsTime())([currentTime - p_req.matchedTime[0], ConstSecondsPerDay()]));
     
     // AB-5. Check if expiredTime is legal
-    // AL-5. Check if t_e is legal
+    // AL-5. Check if t_e is valid
     ImplyEq()(isAuc, 1, TagLessEqThan(BitsTime())([req.arg[2] + 86400, tSBToken.maturity]));
     
-    // SL-5. Check if t_e is legal
+    // SL-5. Check if t_e is valid
     ImplyEq()(is2nd, 1, TagLessEqThan(BitsTime())([req.arg[2], tSBToken.maturity]));
 
-    // AB-7. Check the lower limit of PI
-    // (PI * daysFromMatched + 366 * one) > daysFromMatched * one + PI
-    var one = 10 ** 8;
-    ImplyEq()(isAuc, 1, TagGreaterEqThan(BitsRatio())([req.arg[3]/*PI*/ * daysFromMatched + 366 * one, daysFromMatched * one + req.arg[3]/*PI*/]));
+    // AB-7. Check interest lower limit
+    // (PIR * daysFromMatched + 366 * one) > daysFromMatched * one + PIR
+    signal daysFromMatchedIfEnabled <== daysFromMatched * enabled;
+    ImplyEq()(isAuc, 1, TagGreaterEqThan(BitsRatio() + BitsTime())([req.arg[3]/*PIR*/ * daysFromMatchedIfEnabled + 366 * one, daysFromMatchedIfEnabled * one + req.arg[3]/*PIR*/]));
 
-    // SL-7. Check the lower limit of PI
+    // SL-7. Check interest lower limit
     // (MQ * daysFromMatched + 365 * BQ) > (BQ * daysFromMatched)
     signal MQ <== Mux(2)([req.arg[5]/*target amout*/, req.amount], is2ndSell);
     signal BQ <== Mux(2)([req.arg[5]/*target amout*/, req.amount], is2ndBuy);
-    ImplyEq()(is2nd, 1, TagGreaterThan(BitsRatio())([MQ * daysFromMatched + 365 * BQ, BQ * daysFromMatched]));
+    ImplyEq()(is2nd, 1, TagGreaterThan(BitsRatio() + BitsTime())([MQ * daysFromMatchedIfEnabled + 365 * BQ, BQ * daysFromMatchedIfEnabled]));
 
     /* correctness */
 
@@ -677,10 +681,10 @@ template DoReqPlaceOrder(){
     // SL-1. Check if the market exists
     ImplyEq()(is2nd, conn.tSBTokenLeafId[0], Mux(2)([req.arg[4], req.tokenId], req.arg[8]));
 
-    // AB-11.Backend updates sender's token leaf
-    // AL-9. Backend updates sender's token leaf
-    // SL-11.If it's a buyer, lock BQ
-    // SL-12.If it's a seller, lock MQ
+    // AB-11.Backend updates the sender's token leaf
+    // AL-9. Backend updates the sender's token leaf
+    // SL-11.If it is a buyer, lock BQ
+    // SL-12.If it is a seller, lock MQ
     ImplyEq()(enabled, conn.accLeafId[0], req.accId);
     ImplyEq()(enabled, conn.tokenLeafId[0], req.tokenId);
     ImplyEqArr(LenOfAccLeaf())(enabled, AccLeaf_MaskTokens()(conn.accLeaf[0][0]), AccLeaf_MaskTokens()(conn.accLeaf[0][1]));
@@ -692,20 +696,20 @@ template DoReqPlaceOrder(){
     ImplyEq()(enabled, conn.nullifierLeafId[0], Digest2NulliferLeafId()(digest));
     ImplyEqArr(LenOfNullifierLeaf())(enabled, NullifierLeaf_Place()(conn.nullifierLeaf[0][0], digest, p_req.nullifierElemId[0]), conn.nullifierLeaf[0][1]);
     
-    // AB-13.Backend adds this order to the list
-    // AL-11.Backend adds this order to the list
-    // SL-14.Backend adds this order to the list
+    // AB-13.Backend adds this order to the order list
+    // AL-11.Backend adds this order to the order list
+    // SL-14.Backend adds this order to the order list
     ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_Place()(p_req.req, 0, 0, conn.txId, lock_amt), conn.orderLeaf[0][1]);
 
-    // AB-2. Check if borrowingAmt, feeRate, collateralAmt, PI can be converted to floating point numbers
-    // AL-2. Check if lendingAmt, feeRate, defaultPI can be converted to floating point numbers
+    // AB-2. Check if borrowingAmt, feeRate, collateralAmt, PIR can be converted to floating point numbers
+    // AL-2. Check if lendingAmt, feeRate, defaultPIR can be converted to floating point numbers
     // SL-2. Check if MQ, BQ, feeRate can be converted to floating point numbers
     signal packedAmount0 <== Fix2FloatCond()(enabled, req.amount);
     signal packedAmount1 <== Fix2FloatCond()(enabled, req.arg[5]/*target amout*/);
     signal packedFee0 <== Fix2FloatCond()(enabled, req.fee0);
     signal packedFee1 <== Fix2FloatCond()(enabled, req.fee1);
 
-    Chunkify(7, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtPacked(), FmtPacked(), FmtTime(), FmtTime()])(And()(enabled, isLend), p_req.chunks, [req.opType, req.accId, req.tokenId, packedAmount0, packedFee0, req.arg[1]/*maturity time*/, p_req.matchedTime[0]]);
+    Chunkify(8, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtPacked(), FmtPacked(), FmtPacked(), FmtTime(), FmtTime()])(And()(enabled, isLend), p_req.chunks, [req.opType, req.accId, req.tokenId, packedAmount0, packedFee0, req.arg[9], req.arg[1]/*maturity time*/, p_req.matchedTime[0]]);
     Chunkify(7, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtPacked(), FmtPacked(), FmtPacked(), FmtTime()])(And()(enabled, isBorrow), p_req.chunks, [req.opType, req.accId, req.tokenId, packedAmount0, packedFee0, packedAmount1, p_req.matchedTime[0]]);
     Chunkify(10, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtPacked(), FmtPacked(), FmtPacked(), FmtTokenId(), FmtPacked(), FmtTime(), FmtTime()])(And()(enabled, is2nd), p_req.chunks, [req.opType, req.accId, req.tokenId, packedAmount0, packedFee0, packedFee1, req.arg[4]/*target token id*/, packedAmount1, req.arg[2]/*expired time*/, p_req.matchedTime[0]]);
 
@@ -720,17 +724,17 @@ template DoReqPlaceOrder(){
     ChannelOut is not initialized, so these two requests cannot be used as the end of a batch.
 
     Items that require verification for AuctionStart:
-    AS-0. Specifies a market, considering all orders within it	A market represents a tSBToken token
-    AS-1. Exclude expired orders
-    AS-3. Check whether the highest priority borrow order matches with the lend order or not, if not, exclude this borrow order and repeat step 2
-    AS-4. If a new borrow order is swapped in, Backend constructs l2 admin request: AuctionStart
+    AS-0. List orders in a market
+    AS-1. Exclude the expired orders
+    AS-3. Check if the borrow order with the highest priority matches with the lend order or not. If not, exclude this borrow order and repeat step 2
+    AS-4. If a new borrow order is processed in a matching round, Backend constructs L2 admin request: AuctionStart
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     
     Items that require verification for SecondLimitStart:
-    SSS-15. Backend constructs l2 admin request: SecondLimitStart
-    SSS-16. Consider all orders in this market
-    SSS-17. Sort the orders by PI rate priority
+    SSS-15. Backend constructs L2 admin request: SecondLimitStart
+    SSS-16. Include all orders in this market to process
+    SSS-17. Exclude the expired orders
 
 */
 template DoReqStart(){
@@ -753,29 +757,29 @@ template DoReqStart(){
 
     /* legality */
 
-    // AS-0. Specifies a market, considering all orders within it	A market represents a tSBToken token
-    // SSS-16. Consider all orders in this market
+    // AS-0. List orders in a market
+    // SSS-16. Include all orders in this market to process
     ImplyEq()(enabled, order_req.opType, Mux(2)([OpTypeNumSecondLimitOrder(), OpTypeNumAuctionBorrow()], isAuctionStart));
     
-    // AS-1. Exclude expired orders
-    // SL-6. Check if it's expired
+    // AS-1. Exclude the expired orders
+    // SL-6. Check if the order is expired
     Req_CheckExpiration()(order.req, enabled, p_req.matchedTime[0]);
 
     /* correctness */
-    // AS-4. If a new borrow order is swapped in, Backend constructs l2 admin request: AuctionStart
-    // SSS-15. Backend constructs l2 admin request: SecondLimitStart
+    // AS-4. If a new borrow order is processed in a matching round, Backend constructs L2 admin request: AuctionStart
+    // SSS-15. Backend constructs L2 admin request: SecondLimitStart
     //      This step will temporarily remove the order from the order tree. It will be reinserted during AuctionEnd or SecondLimitEnd.
     ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_Default()(), conn.orderLeaf[0][1]);
 
-    signal packedPI <== Fix2FloatCond()(enabled, req.arg[3]/*matched PI*/);
-    Chunkify(3, [FmtOpcode(), FmtTxOffset(), FmtPacked()])(And()(enabled, isAuctionStart), p_req.chunks, [req.opType, conn.txId - order.txId, packedPI]);
+    signal packedPIR <== Fix2FloatCond()(enabled, req.arg[3]/*matched PIR*/);
+    Chunkify(3, [FmtOpcode(), FmtTxOffset(), FmtPacked()])(And()(enabled, isAuctionStart), p_req.chunks, [req.opType, conn.txId - order.txId, packedPIR]);
     Chunkify(2, [FmtOpcode(), FmtTxOffset()])(And()(enabled, Not()(isAuctionStart)), p_req.chunks, [req.opType, conn.txId - order.txId]);
 
-    // AS-0. Specifies a market, considering all orders within it	A market represents a tSBToken token
-    // SSS-16. Consider all orders in this market
+    // AS-0. List orders in a market
+    // SSS-16. Include all orders in this market to process
     //      The information in Channel includes the order details, including the current Market being processed.
     ImplyEqArr(LenOfChannel())(enabled, channelIn, Channel_Default()());
-    channelOut <== Channel_New()(conn.orderLeaf[0][0], [order.cumAmt0, order.cumAmt1, req.arg[3]/*matched PI*/ * isAuctionStart, 0, 0]);
+    channelOut <== Channel_New()(conn.orderLeaf[0][0], [order.cumAmt0, order.cumAmt1, req.arg[3]/*matched PIR*/ * isAuctionStart, 0, 0]);
 }
 
 /*
@@ -784,17 +788,17 @@ template DoReqStart(){
     ChannelOut is not initialized, so this request cannot be used as the end of a batch.
 
     Items that require verification for AuctionStart:
-    SM-0. Backend receives a signed l2 user request: SecondMarketOrder from a user
+    SM-0. Backend receives a signed L2 user request: SecondMarketOrder from a user
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     SM-1. Check if the market exists
-    SM-2. Check if MQ, BQ, feeRate can be converted to floating point numbers
-    SM-3. Check for duplicate orders
-    SM-5. Check if t_e is legal
+    SM-2. Check if MQ, BQ, makerFeeRate, takerFeeRate can be converted to floating point numbers
+    SM-3. Check if duplicated orders exist
+    SM-5. Check if t_e is valid
     SM-6. Check if it is expired
     SM-7. If it's a buy order, check if there is enough BQ in the wallet
         *   Checked in template: DoSecondMarketEnd()
-    SM-21. Backend updates nullifier
+    SM-22. Backend updates nullifier
 */
 template DoReqSecondMarketOrder(){
     signal input {bool} enabled;
@@ -817,12 +821,12 @@ template DoReqSecondMarketOrder(){
     // SM-6. Check if it is expired	t_o < t_e
     Req_CheckExpiration()(req.arr, enabled, p_req.matchedTime[0]);
 
-    // SM-3. Check for duplicate orders	nullifier check	Y
+    // SM-3. Check if duplicated orders exist	nullifier check	Y
     ImplyEq()(enabled, req.arg[7]/*epoch*/, Mux(2)([conn.epoch[0][0], conn.epoch[1][0]], p_req.nullifierTreeId[0]));
     NullifierLeaf_CheckCollision()(conn.nullifierLeaf[0][0], enabled, digest);
     ImplyEq()(enabled, 0, Mux(LenOfNullifierLeaf())(conn.nullifierLeaf[0][0], p_req.nullifierElemId[0]));
     
-    // SM-5. Check if t_e is legal
+    // SM-5. Check if t_e is valid
     ImplyEq()(enabled, 1, TagLessEqThan(BitsTime())([req.arg[2], tSBToken.maturity]));
 
     /* correctness */
@@ -834,7 +838,7 @@ template DoReqSecondMarketOrder(){
     ImplyEq()(enabled, conn.nullifierLeafId[0], Digest2NulliferLeafId()(digest));
     ImplyEqArr(LenOfNullifierLeaf())(enabled, NullifierLeaf_Place()(conn.nullifierLeaf[0][0], digest, p_req.nullifierElemId[0]), conn.nullifierLeaf[0][1]);
     
-    // SM-2. Check if MQ, BQ, feeRate can be converted to floating point numbers
+    // SM-2. Check if MQ, BQ, makerFeeRate, takerFeeRate can be converted to floating point numbers
     signal packedAmount0 <== Fix2FloatCond()(enabled, req.amount);
     signal packedAmount1 <== Fix2FloatCond()(enabled, req.arg[5]/*target amout*/);
     signal packedFee0 <== Fix2FloatCond()(enabled, req.fee0);
@@ -852,37 +856,37 @@ template DoReqSecondMarketOrder(){
 
     Items that require verification for AuctionMatch:
     AM-5. Perform Interact operation on the specified borrow and lend orders
-    AM-6. Charge a fee from the lender
-    AM-7. Deduct matched lending amount from the previously locked lending amount
+    AM-6. Charge the fee from the lender
+    AM-7. Deduct the matched lending amount from the previously locked lending amount
     AM-8. If the lend order is completed, return the remaining locked amount in the lend order
-    AM-9. Distribute tSBToken tokens to the lender
-    AM-10.Backend constructs l2 admin request: AuctionMatch
+    AM-9. Distribute TSB tokens to the lender
+    AM-10.Backend constructs L2 admin request: AuctionMatch
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
 
     Items that require verification for SecondLimitExchange:
-    SLI-16. Consider all orders in this market
-    SLI-17. Exclude expired orders
-    SLI-19. Check whether the highest priority maker matches with this order or not
-    SLI-20. Perform Interact with the specified buyer's order and seller's order
-    SLI-21. If maker is a seller, check if matchedBQ is greater than or equal to the maker's fees
+    SLI-16. Include all orders in this market to process
+    SLI-17. Exclude the expired orders
+    SLI-19. Check if a maker with the highest priority matches his/her orders or not
+    SLI-20. Perform Interaction with the matched buyer's orders and seller's orders
+    SLI-21. If the maker is the seller, check if matchedBQ is greater than or equal to the maker's fee
     SLI-22. Execute the transaction result
-    SLI-23. Charge fee from maker
-    SLI-24. If maker order has been completed, return the remaining locked amount in the order
-    SLI-25. Backend constructs l2 admin request: SecondLimitExchange
+    SLI-23. Charge the maker fee
+    SLI-24. If a maker's order has been completed, return the remaining locked amount in the order
+    SLI-25. Backend constructs L2 admin request: SecondLimitExchange
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
 
     Items that require verification for SecondMarketExchange:
-    SMI-8. Consider all orders in this market
-    SMI-9. Exclude expired orders
-    SMI-11. Check whether the highest priority maker matches with this order or not
-    SMI-12. Perform Interact on the specified buy order and sell order
+    SMI-8. Include all orders in this market to process
+    SMI-9. Exclude the expired orders
+    SMI-11. Check if the maker with the highest priority matches with this order or not
+    SMI-12. Perform Interaction on the specified buy order and sell order
     SMI-13. If the maker is the seller, check if matchedBQ is greater than or equal to the maker's fee
     SMI-14. Execute the trading result
-    SMI-15. Charge the maker's fee
-    SMI-16. If the maker order is completed, return the remaining locked amt in the order
-    SMI-17. Backend constructs l2 admin request: SecondMarketExchange    
+    SMI-15. Charge the maker fee
+    SMI-16. If the maker order is completed, return the remaining locked amount in the maker order
+    SMI-17. Backend constructs L2 admin request: SecondMarketExchange   
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
 
@@ -916,12 +920,12 @@ template DoReqInteract(){
     signal isSecondaryMarket <== TagIsEqual()([req.opType, OpTypeNumSecondMarketExchange()]);
     
     // AM-5. Perform Interact operation on the specified borrow and lend orders
-    // SLI-20. Perform Interact with the specified buyer's order and seller's order
+    // SLI-20. Perform Interaction with the matched buyer's orders and seller's orders
     // SMI-12. Perform Interact on the specified buy order and sell order   
     signal days <== DaysFrom()(p_req.matchedTime[0], tSBToken.maturity);
     signal newLend[LenOfOrderLeaf()], newBorrow[LenOfOrderLeaf()], isMatchedIfAuction;
-    var matchedPI = channel_in.args[2];
-    (newLend, newBorrow, isMatchedIfAuction) <== AuctionInteract()(ori_order1.arr, ori_order0.arr, Mux(2)([1, matchedPI], isAuction), days);
+    var matchedPIR = channel_in.args[2];
+    (newLend, newBorrow, isMatchedIfAuction) <== AuctionInteract()(ori_order1.arr, ori_order0.arr, Mux(2)([1, matchedPIR], isAuction), days);
     signal newTaker[LenOfOrderLeaf()], newMaker[LenOfOrderLeaf()], isMatchedIfSecondary;
     (newTaker, newMaker, isMatchedIfSecondary) <== SecondaryInteract()(ori_order0.arr, ori_order1.arr, days);
     
@@ -937,8 +941,9 @@ template DoReqInteract(){
     // There are two ways to collect fees.
     //      One is deducted from the money originally locked. (feeFromLocked)
     //      The other is deducted from the money obtained this time. (feeFromTarget)
+    var one = 10 ** 8;
     signal feeFromLocked, feeFromTarget, fee;
-    (feeFromLocked, feeFromTarget, fee) <== CalcFee()(new_order1.arr, enabled, ori_order1.cumAmt0, ori_order1.cumAmt1, p_req.matchedTime[0], tSBToken.maturity, Mux(2)([1, ori_order0_req.arg[9]/*default PI*/], isAuction));
+    (feeFromLocked, feeFromTarget, fee) <== CalcFee()(new_order1.arr, enabled, ori_order1.cumAmt0, ori_order1.cumAmt1, p_req.matchedTime[0], tSBToken.maturity, Mux(2)([1, ori_order1_req.arg[9] + one/*default PIR*/], isAuction));
     
     signal enabledAndIsAuction <== And()(enabled, isAuction);
     signal enabledAndIsSecondaryLimit <== And()(enabled, isSecondaryLimit);
@@ -946,27 +951,27 @@ template DoReqInteract(){
 
     /* legality */
 
-    // AS-1. Exclude expired orders
-    // SLI-17. Exclude expired orders
-    // SMI-9. Exclude expired orders
+    // AS-1. Exclude the expired orders
+    // SLI-17. Exclude the expired orders
+    // SMI-9. Exclude the expired orders
     Req_CheckExpiration()(ori_order1.req, enabled, p_req.matchedTime[0]);
     
-    // AS-3. Check whether the highest priority borrow order matches with the lend order or not, if not, exclude this borrow order and repeat step 2
+    // AS-3. Check if the borrow order with the highest priority matches with the lend order or not. If not, exclude this borrow order and repeat step 2
     ImplyEq()(enabledAndIsAuction, ori_order0_req.opType, OpTypeNumAuctionBorrow());
     ImplyEq()(enabledAndIsAuction, ori_order1_req.opType, OpTypeNumAuctionLend());
-    ImplyEq()(enabledAndIsAuction, 1, TagGreaterEqThan(BitsRatio())([ori_order1_req.arg[3]/*PI*/, channel_in.args[3]]));
+    ImplyEq()(enabledAndIsAuction, 1, TagGreaterEqThan(BitsRatio())([ori_order1_req.arg[3]/*PIR*/, channel_in.args[3]]));
 
-    // SLI-19. Check whether the highest priority maker matches with this order or not
+    // SLI-19. Check if a maker with the highest priority matches his/her orders or not
     ImplyEq()(enabledAndIsSecondaryLimit, ori_order0_req.opType, OpTypeNumSecondLimitOrder());
     ImplyEq()(enabledAndIsSecondaryLimit, ori_order1_req.opType, OpTypeNumSecondLimitOrder());
 
-    // SMI-11. Check whether the highest priority maker matches with this order or not
+    // SMI-11. Check if a maker with the highest priority matches his/her orders or not
     ImplyEq()(enabledAndIsSecondaryMarket, ori_order0_req.opType, OpTypeNumSecondMarketOrder());
     ImplyEq()(enabledAndIsSecondaryMarket, ori_order1_req.opType, OpTypeNumSecondLimitOrder());
 
-    // AS-3. Check whether the highest priority borrow order matches with the lend order or not, if not, exclude this borrow order and repeat step 2
-    // SLI-19. Check whether the highest priority maker matches with this order or not
-    // SMI-11. Check whether the highest priority maker matches with this order or not
+    // AS-3. Check if the borrow order with the highest priority matches with the lend order or not. If not, exclude this borrow order and repeat step 2
+    // SLI-19. Check if a maker with the highest priority matches his/her orders or not
+    // SMI-11. Check if a maker with the highest priority matches his/her orders or not
     ImplyEq()(enabled, 1, Mux(2)([isMatchedIfSecondary, isMatchedIfAuction], TagIsEqual()([req.opType, OpTypeNumAuctionMatch()])));
     
     // SLI-21. If the maker is the seller, check if matchedBQ is greater than or equal to the maker's fee
@@ -979,14 +984,14 @@ template DoReqInteract(){
 
     /* correctness */
 
-    // AM-6. Charge a fee from the lender
-    // AM-7. Deduct matched lending amount from the previously locked lending amount
+    // AM-6. Charge the fee from the lender
+    // AM-7. Deduct the matched lending amount from the previously locked lending amount
     // AM-8. If the lend order is completed, return the remaining locked amount in the lend order
-    // AM-9. Distribute tSBToken tokens to the lender
+    // AM-9. Distribute TSB tokens to the lender
     // SLI-22. Execute the transaction result
     //     This step only handle the maker's order. The taker's order will be handled in DoReqEnd().
-    // SLI-23. Charge fee from maker
-    // SLI-24. If maker order has been completed, return the remaining locked amount in the order
+    // SLI-23. Charge the maker fee
+    // SLI-24. If a maker's order has been completed, return the remaining locked amount in the order
     // SMI-14. Execute the trading 
     //     This step only handle the maker's order. The taker's order will be handled in DoReqEnd().
     // SMI-15. Charge the maker's fee
@@ -1004,16 +1009,16 @@ template DoReqInteract(){
     ImplyEqArr(LenOfTokenLeaf())(enabled, TokenLeaf_Incoming()(conn.tokenLeaf[0][0], enabled, matched_amt1 - feeFromTarget), conn.tokenLeaf[0][1]);
     ImplyEqArr(LenOfTokenLeaf())(enabled, TokenLeaf_Unlock()(TokenLeaf_Deduct()(conn.tokenLeaf[1][0], enabled, matched_amt0 + feeFromLocked), enabled, refund), conn.tokenLeaf[1][1]);
 
-    // AM-6. Charge a fee from the lender
-    // SLI-23. Charge fee from maker
+    // AM-6. Charge the fee from the lender
+    // SLI-23. Charge the maker fee
     // SMI-15. Charge the maker's fee
     ImplyEq()(enabledAndIsAuction, conn.feeLeafId[0], ori_order1_req.tokenId);
     ImplyEq()(And()(enabled, Or()(isSecondaryLimit, isSecondaryMarket)), conn.feeLeafId[0], Mux(2)([ori_order1_req.tokenId, ori_order1_req.arg[4]/*target token id*/], ori_order1_req.arg[8]/*side*/));
     ImplyEqArr(LenOfFeeLeaf())(enabled, FeeLeaf_Incoming()(conn.feeLeaf[0][0], enabled, fee), conn.feeLeaf[0][1]);
     
     // AS-0. Specifies a market, considering all orders within it
-    // SLI-16. Consider all orders in this market
-    // SMI-8. Consider all orders in this market
+    // SLI-16. Include all orders in this market to process
+    // SMI-8. Include all orders in this market to process
     //      Check that both orders contain the same tSBToken token
     ImplyEq()(enabledAndIsAuction, tSBToken.baseTokenId, ori_order1_req.tokenId);
     ImplyEq()(enabledAndIsAuction, tSBToken.maturity, ori_order1_req.arg[1]/*maturity time*/);
@@ -1022,20 +1027,20 @@ template DoReqInteract(){
     ImplyEqArr(LenOfTSBTokenLeaf())(enabled, conn.tSBTokenLeaf[0][0], conn.tSBTokenLeaf[0][1]);
     
     // AM-5. Perform Interact operation on the specified borrow and lend orders
-    // SLI-20. Perform Interact with the specified buyer's order and seller's order
+    // SLI-20. Perform Interaction with the matched buyer's orders and seller's orders
     // SMI-12. Perform Interact on the specified buy order and sell order
     ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_DefaultIf()(newNewOrder1, isFull), conn.orderLeaf[0][1]);
 
-    // AB-2. Check if borrowingAmt, feeRate, collateralAmt, PI can be converted to floating point numbers
-    // AL-2. Check if lendingAmt, feeRate, defaultPI can be converted to floating point numbers
+    // AB-2. Check if borrowingAmt, feeRate, collateralAmt, PIR can be converted to floating point numbers
+    // AL-2. Check if lendingAmt, feeRate, defaultPIR can be converted to floating point numbers
     // SL-2. Check if MQ, BQ, feeRate can be converted to floating point numbers
-    // SM-2. Check if MQ, BQ, feeRate can be converted to floating point numbers
+    // SM-2. Check if MQ, BQ, makerFeeRate, takerFeeRate can be converted to floating point numbers
     signal packedAmt1 <== Fix2FloatCond()(enabled, ori_order1_req.arg[5]/*target amout*/);
 
     Chunkify(2, [FmtOpcode(), FmtTxOffset()])(enabledAndIsAuction, p_req.chunks, [req.opType, conn.txId - ori_order1.txId]);
     Chunkify(3, [FmtOpcode(), FmtTxOffset(), FmtPacked()])(And()(enabled, Or()(isSecondaryLimit, isSecondaryMarket)), p_req.chunks, [req.opType, conn.txId - ori_order1.txId, packedAmt1]);
 
-    signal channelOutIfAuction[LenOfChannel()] <== Channel_New()(newBorrow, [channel_in.args[0]/*oriCumAmt0*/, channel_in.args[1]/*oricumamt1*/, channel_in.args[2], ori_order1_req.arg[3]/*PI*/, 0]);
+    signal channelOutIfAuction[LenOfChannel()] <== Channel_New()(newBorrow, [channel_in.args[0]/*oriCumAmt0*/, channel_in.args[1]/*oricumamt1*/, channel_in.args[2], ori_order1_req.arg[3]/*PIR*/, 0]);
     signal channelOutIfSecondary[LenOfChannel()] <== Channel_New()(newTaker, [channel_in.args[0]/*oriCumAmt0*/, channel_in.args[1]/*oricumamt1*/, channel_in.args[2], 0, 0]);
     channelOut <== Multiplexer(LenOfChannel(), 2)([channelOutIfSecondary, channelOutIfAuction], isAuction);
 }
@@ -1045,23 +1050,23 @@ template DoReqInteract(){
     This template is used to verify AuctionEnd (AE), SecondLimitEnd (SLE) requests.
 
     Items that require verification for AuctionEnd:
-    AE-11. If the borrow order will not be matched in this round, matched borrowing amount need to greater than fee	
-    AE-12. If the borrow order will not be matched in this round, distribute matched borrowing amount to borrower	
-    AE-13. If the borrow order will not be matched in this round, calculate and charge borrower's fee	
-    AE-14. If the borrow order will not be matched in this round, deduct matched collateral amount from the previously locked collateral amount	
-    AE-15. If the borrow order will not be matched in this round, Backend constructs l2 admin request: AuctionEnd
+    AE-11. If the borrow order has no more matches in this round, matched borrowing amount > fee
+    AE-12. If the borrow order has no more matches in this round, distribute the matched loan to borrower	
+    AE-13. If the borrow order has no more matches in this round, calculate the fee to charge the borrower	
+    AE-14. If the borrow order has no more matches in this round, deduct the collateral amount in the mathced orders from the total locked collateral amount	
+    AE-15. If the borrow order has no more matches in this round, the Backend constructs L2 admin request: AuctionEnd
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     AE-16. If the borrow order is completed, return the remaining locked amount in the borrow order
 
     Items that require verification for SecondLimitEnd:
-    SLE-26.If there is no more maker to match with taker, if taker is a seller, check if matchedBQ is greater than or equal to taker's fees	
-    SLE-27.If there is no more maker to match with taker, charge fee from taker		
-    SLE-28.If there is no more maker to match with taker, if taker order has been completed, return the remaining locked amount in the order		
-    SLE-29.If there is no more maker to match with taker, Backend constructs l2 admin request: SecondLimitEnd
+    SLE-26.If there is no more maker to match with a taker and if the taker is a seller, check if matchedBQ is greater than or equal to the taker's fees	
+    SLE-27.If there is no more maker to match with a taker, charge fee from the taker		
+    SLE-28.If there is no more maker to match with a taker, and if the taker's order has been completed, return the remaining locked amount in the order		
+    SLE-29.If there is no more maker to match with a taker, the Backend constructs L2 admin request: SecondLimitEnd
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
-    SLE-30.If there is no more maker to match with taker, add taker to the maker list
+    SLE-30.If there is no more maker to match with a taker, add the taker to the maker list
 
 */
 template DoReqEnd(){
@@ -1102,23 +1107,23 @@ template DoReqEnd(){
 
     /* legality */
     
-    // AS-3. Check whether the highest priority borrow order matches with the lend order or not, if not, exclude this borrow order and repeat step 2
+    // AS-3. Check if the borrow order with the highest priority matches with the lend order or not. If not, exclude this borrow order and repeat step 2
     ImplyEq()(enabledAndIsAuction, order_req.opType, OpTypeNumAuctionBorrow());
     
-    // SLI-19. Check whether the highest priority maker matches with this order or not
+    // SLI-19. Check if a maker with the highest priority matches his/her orders or not
     ImplyEq()(And()(enabled, isSecondaryLimit), order_req.opType, OpTypeNumSecondLimitOrder());
     
     // AM-5. Perform Interact operation on the specified borrow and lend orders
-    //   This step esures that matchedPI is correct
+    //   This step esures that matchedPIR is correct
     ImplyEq()(enabledAndIsAuction, channel_in.args[2], channel_in.args[3]);
     
-    // AS-4. If a new borrow order is swapped in, Backend constructs l2 admin request: AuctionStart
-    // SSS-15. Backend constructs l2 admin request: SecondLimitStart
+    // AS-4. If a new borrow order is processed in a matching round, Backend constructs L2 admin request: AuctionStart
+    // SSS-15. Backend constructs L2 admin request: SecondLimitStart
     //      We will reinsert the order into order tree, check if it's a empty order leaf.
     ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_Default()(), conn.orderLeaf[0][0]);
 
-    // AE-11. If the borrow order will not be matched in this round, matched borrowing amount need to greater than fee	
-    // SLE-26.If there is no more maker to match with taker, if taker is a seller, check if matchedBQ is greater than or equal to taker's fees	
+    // AE-11. If the borrow order has no more matches in this round, matched borrowing amount > fee
+    // SLE-26.If there is no more maker to match with a taker and if the taker is a seller, check if matchedBQ is greater than or equal to the taker's fees	
     ImplyEq()(enabled, 1, TagLessEqThan(BitsAmount())([feeFromTarget, matched_amt1]));
 
     // Ensure that the matched time of the order does not differ from the current time (rollup time) by more than one day.
@@ -1127,12 +1132,12 @@ template DoReqEnd(){
 
     /* correctness */
 
-    // AE-12. If the borrow order will not be matched in this round, distribute matched borrowing amount to borrower	
-    // AE-13. If the borrow order will not be matched in this round, calculate and charge borrower's fee	
-    // AE-14. If the borrow order will not be matched in this round, deduct matched collateral amount from the previously locked collateral amount	
+    // AE-12. If the borrow order has no more matches in this round, distribute the matched loan to borrower	
+    // AE-13. If the borrow order has no more matches in this round, calculate the fee to charge the borrower	
+    // AE-14. If the borrow order has no more matches in this round, deduct the collateral amount in the mathced orders from the total locked collateral amount	
     // AE-16. If the borrow order is completed, return the remaining locked amount in the borrow order
-    // SLE-27.If there is no more maker to match with taker, charge fee from taker
-    // SLE-28.If there is no more maker to match with taker, if taker order has been completed, return the remaining locked amount in the order
+    // SLE-27.If there is no more maker to match with a taker, charge fee from the taker
+    // SLE-28.If there is no more maker to match with a taker, and if the taker's order has been completed, return the remaining locked amount in the order
     assert(BitsAmount() + 1 <= ConstFieldBits());
     signal newOrder[LenOfOrderLeaf()] <== OrderLeaf_DeductLockedAmt()(order.arr, enabled, feeFromLocked + matched_amt0);
     signal isFull <== OrderLeaf_IsFull()(newOrder);
@@ -1146,17 +1151,17 @@ template DoReqEnd(){
     ImplyEqArr(LenOfTokenLeaf())(enabled, TokenLeaf_Incoming()(conn.tokenLeaf[0][0], enabled, matched_amt1 - feeFromTarget), conn.tokenLeaf[0][1]);
     ImplyEqArr(LenOfTokenLeaf())(enabled, TokenLeaf_Unlock()(TokenLeaf_Deduct()(conn.tokenLeaf[1][0], enabled, matched_amt0 + feeFromLocked), enabled, refund), conn.tokenLeaf[1][1]);
 
-    // AE-13. If the borrow order will not be matched in this round, calculate and charge borrower's fee	
-    // SLE-27.If there is no more maker to match with taker, charge fee from taker
+    // AE-13. If the borrow order has no more matches in this round, calculate the fee to charge the borrower	
+    // SLE-27.If there is no more maker to match with a taker, charge fee from the taker
     ImplyEq()(enabledAndIsAuction, conn.feeLeafId[0], order_req.arg[4]/*target token id*/);
     ImplyEq()(And()(enabled, isSecondaryLimit), conn.feeLeafId[0], Mux(2)([order_req.tokenId, order_req.arg[4]/*target token id*/], order_req.arg[8]/*side*/));
     ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_DefaultIf()(newOrder, isFull), conn.orderLeaf[0][1]);
     ImplyEqArr(LenOfFeeLeaf())(enabled, FeeLeaf_Incoming()(conn.feeLeaf[0][0], enabled, fee), conn.feeLeaf[0][1]);
     
     
-    // AS-4. If a new borrow order is swapped in, Backend constructs l2 admin request: AuctionStart
-    // SSS-15. Backend constructs l2 admin request: SecondLimitStart
-    // SLE-30.If there is no more maker to match with taker, add taker to the maker list
+    // AS-4. If a new borrow order is processed in a matching round, Backend constructs L2 admin request: AuctionStart
+    // SSS-15. Backend constructs L2 admin request: SecondLimitStart
+    // SLE-30.If there is no more maker to match with a taker, add the taker to the maker list
     //      reinsert the order into order tree
     ImplyEq()(enabledAndIsAuction, tSBToken.baseTokenId, order_req.arg[4]/*target token id*/);
     ImplyEq()(enabledAndIsAuction, tSBToken.maturity, order_req.arg[1]/*maturity time*/);
@@ -1175,10 +1180,10 @@ template DoReqEnd(){
     This template is used to verify SecondMarketEnd requests.
 
     Items that require verification:
-    SME-18. If there is no maker matched with the taker, if the taker is the seller, check if matchedBQ is greater than or equal to the taker's fee
-    SME-19. If there is no maker matched with the taker, charge the taker's fee
-    SME-20. If there is no maker matched with the taker, if the taker order is completed, return the remaining locked amt in the order
-    SME-21. If there is no maker matched with the taker, Backend constructs l2 admin request: SecondMarketEnd
+    SME-18. If there is no maker matched with the taker, and if the taker is a seller, check if matchedBQ is greater than or equal to the taker's fee
+    SME-19. If there is no maker matched with the taker, charge the taker fee
+    SME-20. If there is no maker matched with the taker, and if the taker order is completed, return the remaining locked amount in the taker order
+    SME-21. If there is no maker matched with the taker, the Backend constructs L2 admin request: SecondMarketEnd
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
 
@@ -1211,10 +1216,10 @@ template DoReqSecondMarketEnd(){
 
     /* legality */
 
-    // SMI-11. Check whether the highest priority maker matches with this order or not
+    // SMI-11. Check if a maker with the highest priority matches his/her orders or not
     ImplyEq()(enabled, order_req.opType, OpTypeNumSecondMarketOrder());
 
-    // EME-20. If there is no maker matched with the taker, if the taker is the seller, check if matchedBQ is greater than or equal to the taker's fee
+    // EME-20. If there is no maker matched with the taker, and if the taker is a seller, check if matchedBQ is greater than or equal to the taker's fee
     ImplyEq()(enabled, 1, TagLessEqThan(BitsAmount())([feeFromTarget, matched_amt1]));
     
     // SM-7. If it's a buy order, check if there is enough BQ in the wallet
@@ -1226,8 +1231,8 @@ template DoReqSecondMarketEnd(){
 
     /* correctness */
     
-    // SME-19. If there is no maker matched with the taker, charge the taker's fee
-    // SME-20. If there is no maker matched with the taker, if the taker order is completed, return the remaining locked amt in the order
+    // SME-19. If there is no maker matched with the taker, charge the taker fee
+    // SME-20. If there is no maker matched with the taker, and if the taker order is completed, return the remaining locked amount in the taker order
     ImplyEq()(enabled, conn.accLeafId[0], order_req.accId);
     ImplyEq()(enabled, conn.tokenLeafId[0], order_req.arg[4]/*target token id*/);
     ImplyEq()(enabled, conn.tokenLeafId[1], order_req.tokenId);
@@ -1235,13 +1240,13 @@ template DoReqSecondMarketEnd(){
     ImplyEqArr(LenOfTokenLeaf())(enabled, TokenLeaf_Incoming()(conn.tokenLeaf[0][0], enabled, matched_amt1 - feeFromTarget), conn.tokenLeaf[0][1]);
     ImplyEqArr(LenOfTokenLeaf())(enabled, TokenLeaf_Outgoing()(conn.tokenLeaf[1][0], enabled, matched_amt0 + feeFromLocked), conn.tokenLeaf[1][1]);
 
-    // SME-19. If there is no maker matched with the taker, charge the taker's fee
+    // SME-19. If there is no maker matched with the taker, charge the taker fee
     ImplyEq()(enabled, conn.feeLeafId[0], Mux(2)([order_req.tokenId, order_req.arg[4]/*target token id*/], order_req.arg[8]/*side*/));
     ImplyEqArr(LenOfFeeLeaf())(enabled, FeeLeaf_Incoming()(conn.feeLeaf[0][0], enabled, fee), conn.feeLeaf[0][1]);
     
     // AS-0. Specifies a market, considering all orders within it
-    // SLI-16. Consider all orders in this market
-    // SMI-8. Consider all orders in this market
+    // SLI-16. Include all orders in this market to process
+    // SMI-8. Include all orders in this market to process
     //      Check that both orders contain the same tSBToken token
     ImplyEq()(enabled, conn.tSBTokenLeafId[0], Mux(2)([order_req.arg[4]/*target token id*/, order_req.tokenId], order_req.arg[8]/*side*/));
     ImplyEqArr(LenOfTSBTokenLeaf())(enabled, conn.tSBTokenLeaf[0][0], conn.tSBTokenLeaf[0][1]);
@@ -1256,8 +1261,8 @@ template DoReqSecondMarketEnd(){
     This template is used to verify AdminCancel requests.
 
     Items that require verification:
-    0. Backend deletes specified order
-    1. Backend constructs l2 admin request: AdminCancel
+    0. Backend deletes a specified order
+    1. Backend constructs L2 admin request: AdminCancel
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     2. Backend updates the token leaf
@@ -1272,7 +1277,7 @@ template DoReqAdminCancel(){
     p_req.arr <== preprocessedReq;
     component req = Req();
     req.arr <== p_req.req;
-    component conn = Conn(0, 0, 1, 1, 0, 1, 0, 0);// Update order leaf, acc leaf once and token leaf once
+    component conn = Conn(0, 0, 1, 1, 0, 1, 0, 0);// Update fee leaf, order leaf, acc leaf once and token leaf once
     (conn.enabled, conn.oriState, conn.newState, conn.unitSet, conn.nullifierTreeId) <== (enabled, oriState, newState, p_req.unitSet, p_req.nullifierTreeId[0]);
     component order = OrderLeaf();
     order.arr <== conn.orderLeaf[0][0];
@@ -1286,8 +1291,8 @@ template DoReqAdminCancel(){
     ImplyEq()(enabled, conn.tokenLeafId[0], o_req.tokenId);
     ImplyEqArr(LenOfAccLeaf())(enabled, AccLeaf_MaskTokens()(conn.accLeaf[0][0]), AccLeaf_MaskTokens()(conn.accLeaf[0][1]));
     ImplyEqArr(LenOfTokenLeaf())(enabled, TokenLeaf_Unlock()(conn.tokenLeaf[0][0], enabled, order.lockedAmt), conn.tokenLeaf[0][1]);
-    
-    // 0. Backend deletes specified order
+
+    // 0. Backend deletes a specified order
     ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_Default()(), conn.orderLeaf[0][1]);
 
     Chunkify(2, [FmtOpcode(), FmtTxId()])(enabled, p_req.chunks, [req.opType, order.txId]);
@@ -1301,13 +1306,13 @@ template DoReqAdminCancel(){
     This template is used to verify UserCancel requests.
 
     Items that require verification:
-    0. Backend receives a signed l2 user request: UserCancel from a user
+    0. Backend receives a signed L2 user request: UserCancel from a user
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
-    1. Looks for an order matching the order hash in the request
+    1. Search an order matching the order hash in the request
     2. Check if the sender ID in the order matches the sender ID in the request
-    3. Backend checks if the sender has enough balance for fee
-    4. Backend deletes specified order
+    3. Backend checks if the sender has enough balance for the fee
+    4. Backend deletes a specified order
     5. Backend updates the token leaf
 
 */
@@ -1320,7 +1325,7 @@ template DoReqUserCancel(){
     p_req.arr <== preprocessedReq;
     component req = Req();
     req.arr <== p_req.req;
-    component conn = Conn(0, 0, 1, 1, 0, 2, 0, 0);// Update order leaf, acc leaf once and token leaf once
+    component conn = Conn(1, 0, 1, 1, 0, 2, 0, 0);// Update order leaf, acc leaf once and token leaf once
     (conn.enabled, conn.oriState, conn.newState, conn.unitSet, conn.nullifierTreeId) <== (enabled, oriState, newState, p_req.unitSet, p_req.nullifierTreeId[0]);
     component order = OrderLeaf();
     order.arr <== conn.orderLeaf[0][0];
@@ -1332,7 +1337,7 @@ template DoReqUserCancel(){
     // 2. Check if the sender ID in the order matches the sender ID in the request
     ImplyEq()(enabled, req.accId, o_req.accId);
 
-    // 3. Backend checks if the sender has enough balance for fee
+    // 3. Backend checks if the sender has enough balance for the fee
     TokenLeaf_SufficientCheck()(conn.tokenLeaf[1][0], enabled, req.txFeeAmt);
 
     /* correctness */
@@ -1340,15 +1345,18 @@ template DoReqUserCancel(){
     // 5. Backend updates the token leaf
     ImplyEq()(enabled, conn.accLeafId[0], o_req.accId);
     ImplyEq()(enabled, conn.tokenLeafId[0], o_req.tokenId);
-    ImplyEq()(enabled, conn.tokenLeafId[1], o_req.txFeeTokenId);
+    ImplyEq()(enabled, conn.tokenLeafId[1], req.txFeeTokenId);
     ImplyEqArr(LenOfAccLeaf())(enabled, AccLeaf_MaskTokens()(conn.accLeaf[0][0]), AccLeaf_MaskTokens()(conn.accLeaf[0][1]));
     ImplyEqArr(LenOfTokenLeaf())(enabled, TokenLeaf_Unlock()(conn.tokenLeaf[0][0], enabled, order.lockedAmt), conn.tokenLeaf[0][1]);
     ImplyEqArr(LenOfTokenLeaf())(enabled, TokenLeaf_Outgoing()(conn.tokenLeaf[1][0], enabled, req.txFeeAmt), conn.tokenLeaf[1][1]);
+
+    ImplyEq()(enabled, conn.feeLeafId[0], req.txFeeTokenId);
+    ImplyEqArr(LenOfFeeLeaf())(enabled, FeeLeaf_Incoming()(conn.feeLeaf[0][0], enabled, req.txFeeAmt), conn.feeLeaf[0][1]);
     
-    // 1. Looks for an order matching the order hash in the request
+    // 1. Search an order matching the order hash in the request
     ImplyEq()(enabled, Req_Digest()(order.req), req.arg[10]/*order hash*/);
 
-    // 4. Backend deletes specified order
+    // 4. Backend deletes a specified order
     ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_Default()(), conn.orderLeaf[0][1]);
 
     signal packedTxFeeAmt <== Fix2FloatCond()(enabled, req.txFeeAmt);
@@ -1363,10 +1371,10 @@ template DoReqUserCancel(){
     This template is used to verify SetAdminTsAddr requests.
 
     Items that require verification:
-    0. Backend constructs l2 admin request: SetAdminTsAddr
+    0. Backend constructs L2 admin request: SetAdminTsAddr
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
-    1. Backend updates Admin Ts Addr
+    1. Backend updates Admin TS Addr
 
 */
 template DoReqSetAdminTsAddr(){
@@ -1383,7 +1391,7 @@ template DoReqSetAdminTsAddr(){
 
     /* correctness */
 
-    // 1. Backend updates Admin Ts Addr
+    // 1. Backend updates Admin TS Addr
     ImplyEq()(enabled, conn.adminTsAddr[1], req.arg[6]/*ts-addr*/);
 
     Chunkify(1, [FmtOpcode()])(enabled, p_req.chunks, [req.opType]);
@@ -1397,10 +1405,10 @@ template DoReqSetAdminTsAddr(){
     This template is used to verify IncreaseEpoch requests.
 
     Items that require verification:
-    0. Backend constructs l2 admin request: IncreaseEpoch
+    0. Backend constructs L2 admin request: IncreaseEpoch
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
-    1. Backend updates Nullifier Tree
+    1. Backend updates the Nullifier Tree
 
 */
 template DoReqIncreaseEpoch(){
@@ -1417,7 +1425,7 @@ template DoReqIncreaseEpoch(){
 
     /* correctness */
 
-    // 2. Backend updates Nullifier Tree
+    // 2. Backend updates the Nullifier Tree
     signal treeId <== TagIsEqual()([conn.epoch[1][0] - conn.epoch[0][0], 1]);
     ImplyEq()(enabled, conn.epoch[0][0] + 2 * treeId, conn.epoch[0][1]);
     ImplyEq()(enabled, conn.epoch[1][0] + 2 * (1 - treeId), conn.epoch[1][1]);
@@ -1435,11 +1443,11 @@ template DoReqIncreaseEpoch(){
     This template is used to verify CreateTSBTokenToken requests.
 
     Items that require verification:
-    0. Backend constructs l2 admin request: CreateTSBTokenToken
+    0. Backend constructs L1 request: CreateTsbToken
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     2. Backend checks if maturity is within 80 * 365 days
-    3. Backend updates tSBToken leaf
+    3. Backend updates TSB token leaf
 
 */
 template DoReqCreateTSBTokenToken(){
@@ -1465,13 +1473,13 @@ template DoReqCreateTSBTokenToken(){
     ImplyEq()(enabled, 1, TagLessThan(BitsTime())([currentTime - p_req.matchedTime[0], ConstSecondsPerDay()]));
 
     // 2. Backend checks if maturity is within 80 * 365 days
-    ImplyEq()(enabled, 1, TagLessThan(BitsTime())([p_req.matchedTime[0] + 86400 * upper_lim_of_days, tSBToken.maturity]));
+    ImplyEq()(enabled, 1, TagGreaterThan(BitsTime())([p_req.matchedTime[0] + 86400 * upper_lim_of_days, tSBToken.maturity]));
 
     /* correctness */
 
-    // 3. Backend updates tSBToken leaf
+    // 3. Backend updates TSB token leaf
     ImplyEq()(enabled, conn.tSBTokenLeafId[0], req.tokenId);
-    ImplyEq()(enabled, tSBToken.baseTokenId, req.arg[4]/*target token id*/);
+    ImplyEq()(enabled, tSBToken.baseTokenId, req.arg[4]/*base token id*/);
     ImplyEq()(enabled, tSBToken.maturity, req.arg[1]/*maturity time*/);
 
     Chunkify(4, [FmtOpcode(), FmtTime(), FmtTokenId(), FmtTokenId()])(enabled, p_req.chunks, [req.opType, tSBToken.maturity, tSBToken.baseTokenId, conn.tSBTokenLeafId[0]]);
@@ -1485,14 +1493,14 @@ template DoReqCreateTSBTokenToken(){
     This template is used to verify Redeem requests.
 
     Items that require verification:
-    0. Backend receives a signed l2 user request: Redeem from a user
+    0. Backend receives a signed L2 user request: Redeem from a user
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     1. Backend checks if the sender has enough balance
-    2. Backend checks if nonce is correct
-    3. Backend query maturity time
-    4. Backend checks if currentTime has exceeded maturityTime
-    5. Backend updates sender's account leaf and token leaves
+    2. Backend checks if the nonce is correct
+    3. Backend searches maturity time
+    4. Backend checks if the currentTime exceeds maturityTime
+    5. Backend updates the sender's account leaf and token leaves
 */
 template DoReqRedeem(){
     signal input {bool} enabled;
@@ -1510,22 +1518,22 @@ template DoReqRedeem(){
 
     /* legality */
 
-    // 2. Backend checks if nonce is correct
+    // 2. Backend checks if the nonce is correct
     AccLeaf_NonceCheck()(conn.accLeaf[0][0], enabled, req.nonce);
 
     // 1. Backend checks if the sender has enough balance
     TokenLeaf_SufficientCheck()(conn.tokenLeaf[0][0], enabled, req.amount);
 
-    // 4. Backend checks if currentTime has exceeded maturityTime
+    // 4. Backend checks if the currentTime exceeds maturityTime
     ImplyEq()(enabled, 1, TagGreaterThan(BitsTime())([currentTime, tSBToken.maturity]));
 
     /* correctness */
 
-    // 3. Backend query maturity time
+    // 3. Backend searches maturity time
     ImplyEq()(enabled, conn.tSBTokenLeafId[0], req.tokenId);
     ImplyEqArr(LenOfTSBTokenLeaf())(enabled, conn.tSBTokenLeaf[0][0], conn.tSBTokenLeaf[0][1]);
 
-    // 5. Backend updates sender's account leaf and token leaves
+    // 5. Backend updates the sender's account leaf and token leaves
     ImplyEq()(enabled, conn.accLeafId[0], req.accId);
     ImplyEq()(enabled, conn.tokenLeafId[0], req.tokenId);
     ImplyEq()(enabled, conn.tokenLeafId[1], tSBToken.baseTokenId);
@@ -1544,10 +1552,10 @@ template DoReqRedeem(){
     This template is used to verify WithdrawFee requests.
 
     Items that require verification:
-    0. Backend constructs l2 admin request: WithdrawFee
+    0. Backend constructs L2 admin request: WithdrawFee
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
-    1. Backend updates fee leaf
+    1. Backend updates the fee leaf
 
 */
 template DoReqWithdrawFee(){
@@ -1566,7 +1574,7 @@ template DoReqWithdrawFee(){
 
     /* correctness */
 
-    // 1. Backend updates fee leaf
+    // 1. Backend updates the fee leaf
     ImplyEq()(enabled, conn.feeLeafId[0], req.tokenId);
     ImplyEqArr(LenOfFeeLeaf())(enabled, conn.feeLeaf[0][1], [0]);
 
@@ -1581,7 +1589,7 @@ template DoReqWithdrawFee(){
     This template is used to verify Evacuation requests.
 
     Items that require verification:
-    1. Backend constructs l2 admin request: Evacuation
+    1. Backend constructs L1 requests: Evacuation
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     2. Backend updates token leaf

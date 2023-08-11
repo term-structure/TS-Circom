@@ -150,7 +150,7 @@ template Normal(){
         if(i > 1)
             ImplyEq()(isNoopReq[i - 1], isNoopReq[i], 1);
 
-        // Packed Chunks: Interface btwn r_chunks and o_chunks
+        // Chunk Packing: Interface btwn r_chunks and o_chunks
         for(var j = 0; j < MaxChunksPerReq(); j++){
             chunkMasks[i][j] <== TagLessThan(log2(MaxChunksPerReq()))([j, chunkCount[i]]);
             Indexer(NumOfChunks())(chunkMasks[i][j], r_chunks[i][j], cumChunkCount[i] + j, o_chunks);
@@ -162,7 +162,7 @@ template Normal(){
     }
     ImplyEqArr(LenOfChannel())(1, channelData[NumOfReqs()], Channel_Default()());
 
-    // Handling Remaining Chunks: Each chunk following an noop must also be noop. Noop is not the critical chunk.
+    // Request and Chunk Handling: Each chunk following an noop must also be noop. Noop is not the critical chunk.
     signal isDefaultChunk[NumOfChunks()];
     for(var i = 0; i < NumOfChunks(); i++){
         isDefaultChunk[i] <== TagLessEqThan(log2(NumOfChunks()))([cumChunkCount[NumOfReqs()], i]);
@@ -170,7 +170,7 @@ template Normal(){
         ImplyEq()(isDefaultChunk[i], isCriticalChunk[i], 0);
     }
 
-    // Calculation of Commitment
+    // Commitment Calculation
     signal (oriStateRoot, oriTsRoot) <== State_GetDigest()(state[0]);
     signal (newStateRoot, newTsRoot) <== State_GetDigest()(state[NumOfReqs()]);
     commitment <== CalcCommitment()(oriStateRoot, newStateRoot, newTsRoot, currentTime, o_chunks, isCriticalChunk);

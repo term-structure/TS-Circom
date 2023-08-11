@@ -84,11 +84,12 @@ template PoseidonArbitraryLen(len){
 template PoseidonSpecificLen(len){
     signal input inputs[len];
     signal output out;
-    var new_inputs[len + 1];
+    var new_len = len + 1;
+    var new_inputs[new_len];
     new_inputs[0] = len;
-    for(var i = 1; i < len; i++)
+    for(var i = 1; i < new_len; i++)
         new_inputs[i] = inputs[i - 1];
-    out <== PoseidonArbitraryLen(len + 1)(new_inputs);
+    out <== PoseidonArbitraryLen(new_len)(new_inputs);
 }
 template TsPubKey2TsAddr(){
     signal input in[2];
