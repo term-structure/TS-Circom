@@ -68,7 +68,7 @@ template DoRequest(){
     channel[18] <== DoReqAdminCancel       ()(TagIsEqual()([opType, OpTypeNumAdminCancelOrder()])     , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[19] <== DoReqUserCancel        ()(TagIsEqual()([opType, OpTypeNumUserCancelOrder()])      , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[20] <== DoReqIncreaseEpoch     ()(TagIsEqual()([opType, OpTypeNumIncreaseEpoch()])        , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[21] <== DoReqCreateTSBTokenToken   ()(TagIsEqual()([opType, OpTypeNumCreateTSBToken()])       , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[21] <== DoReqCreateTSBToken   ()(TagIsEqual()([opType, OpTypeNumCreateTSBToken()])       , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[22] <== DoReqRedeem            ()(TagIsEqual()([opType, OpTypeNumRedeem()])               , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[23] <== DoReqWithdrawFee       ()(TagIsEqual()([opType, OpTypeNumWithdrawFee()])          , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[24] <== DoReqEvacuation        ()(TagIsEqual()([opType, OpTypeNumEvacuation()])           , currentTime, channelIn, oriState, newState, preprocessedReq);

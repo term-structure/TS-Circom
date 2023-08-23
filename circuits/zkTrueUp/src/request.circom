@@ -273,7 +273,7 @@ template DoReqNoop(){
     This template is used to verify Register requests.
 
     Items that require verification: 
-    1. Backend constructs L1 requests: Register
+    1. Backend constructs L1 request: Register
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     3. Backend checks the default valud of the account leaf	   
@@ -314,7 +314,7 @@ template DoReqRegister(){
     This template is used to verify Deposit requests.
 
     Items that require verification:
-    1. Backend constructs L1 requests: Deposit
+    1. Backend constructs L1 request: Deposit
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     2. Backend updates the token leaf
@@ -463,7 +463,7 @@ template DoReqWithdraw(){
     This template is used to verify ForcedWithdraw requests.
 
     Items that require verification:
-    1. Backend constructs L1 requests: ForceWithdraw
+    1. Backend constructs L1 request: ForceWithdraw
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
     2. Backend updates the token leaf
@@ -616,13 +616,13 @@ template DoReqPlaceOrder(){
     // Please refer to the lockedAmt formula for each request mentioned above.
     signal daysFromMatched <== DaysFrom()(p_req.matchedTime[0], tSBToken.maturity);
     signal daysFromExpired <== Req_DaysFromExpired()(p_req.req, tSBToken.maturity);
-    signal isNegPIRIf2ndBuy <== And()(is2ndBuy, TagLessThan(BitsAmount())([req.arg[5]/*target amout*/, req.amount]));
+    signal isNegPIRIf2ndBuy <== And()(is2ndBuy, TagLessThan(BitsAmount())([req.arg[5]/*target amount*/, req.amount]));
 
     var one = 10 ** 8;
     signal lockFeeAmtIfLend <== AuctionCalcFee()(req.fee0, req.amount, req.arg[9] + one/*default PIR*/, daysFromMatched);
     var lockAmtIfLend = req.amount + lockFeeAmtIfLend;
-    signal expectedSellAmtIf2ndBuy <== CalcNewBQ()(enabled, req.arg[5]/*target amout*/, req.arg[5]/*target amout*/, req.amount, daysFromExpired);
-    signal lockFeeIf2ndBuy <== SecondCalcFee()(req.arg[5]/*target amout*/, Max(BitsRatio())([req.fee0, req.fee1]), Mux(2)([daysFromMatched, daysFromExpired], isNegPIRIf2ndBuy));
+    signal expectedSellAmtIf2ndBuy <== CalcNewBQ()(enabled, req.arg[5]/*target amount*/, req.arg[5]/*target amount*/, req.amount, Mux(2)([daysFromExpired, daysFromMatched], isNegPIRIf2ndBuy));
+    signal lockFeeIf2ndBuy <== SecondCalcFee()(req.arg[5]/*target amount*/, Max(BitsRatio())([req.fee0, req.fee1]), daysFromMatched);
     signal lockAmtIf2ndBuy <== expectedSellAmtIf2ndBuy + lockFeeIf2ndBuy;
     signal lock_amt <== Mux(4)([lockAmtIfLend, req.amount, lockAmtIf2ndBuy, req.amount], isLend * 0 + isBorrow * 1 + is2ndBuy * 2 + is2ndSell * 3);
     assert(BitsAmount() + 1 <= ConstFieldBits());
@@ -666,8 +666,8 @@ template DoReqPlaceOrder(){
 
     // SL-7. Check interest lower limit
     // (MQ * daysFromMatched + 365 * BQ) > (BQ * daysFromMatched)
-    signal MQ <== Mux(2)([req.arg[5]/*target amout*/, req.amount], is2ndSell);
-    signal BQ <== Mux(2)([req.arg[5]/*target amout*/, req.amount], is2ndBuy);
+    signal MQ <== Mux(2)([req.arg[5]/*target amount*/, req.amount], is2ndSell);
+    signal BQ <== Mux(2)([req.arg[5]/*target amount*/, req.amount], is2ndBuy);
     ImplyEq()(is2nd, 1, TagGreaterThan(BitsRatio() + BitsTime())([MQ * daysFromMatchedIfEnabled + 365 * BQ, BQ * daysFromMatchedIfEnabled]));
 
     /* correctness */
@@ -705,7 +705,7 @@ template DoReqPlaceOrder(){
     // AL-2. Check if lendingAmt, feeRate, defaultPIR can be converted to floating point numbers
     // SL-2. Check if MQ, BQ, feeRate can be converted to floating point numbers
     signal packedAmount0 <== Fix2FloatCond()(enabled, req.amount);
-    signal packedAmount1 <== Fix2FloatCond()(enabled, req.arg[5]/*target amout*/);
+    signal packedAmount1 <== Fix2FloatCond()(enabled, req.arg[5]/*target amount*/);
     signal packedFee0 <== Fix2FloatCond()(enabled, req.fee0);
     signal packedFee1 <== Fix2FloatCond()(enabled, req.fee1);
 
@@ -840,7 +840,7 @@ template DoReqSecondMarketOrder(){
     
     // SM-2. Check if MQ, BQ, makerFeeRate, takerFeeRate can be converted to floating point numbers
     signal packedAmount0 <== Fix2FloatCond()(enabled, req.amount);
-    signal packedAmount1 <== Fix2FloatCond()(enabled, req.arg[5]/*target amout*/);
+    signal packedAmount1 <== Fix2FloatCond()(enabled, req.arg[5]/*target amount*/);
     signal packedFee0 <== Fix2FloatCond()(enabled, req.fee0);
 
     Chunkify(8, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtPacked(), FmtPacked(), FmtTokenId(), FmtPacked(), FmtTime()])(enabled, p_req.chunks, [req.opType, req.accId, req.tokenId, packedAmount0, packedFee0, req.arg[4]/*target token id*/, packedAmount1, req.arg[2]/*expired time*/]);
@@ -1035,10 +1035,10 @@ template DoReqInteract(){
     // AL-2. Check if lendingAmt, feeRate, defaultPIR can be converted to floating point numbers
     // SL-2. Check if MQ, BQ, feeRate can be converted to floating point numbers
     // SM-2. Check if MQ, BQ, makerFeeRate, takerFeeRate can be converted to floating point numbers
-    signal packedAmt1 <== Fix2FloatCond()(enabled, ori_order1_req.arg[5]/*target amout*/);
+    signal packedAmt1 <== Fix2FloatCond()(enabled, ori_order1_req.arg[5]/*target amount*/);
 
     Chunkify(2, [FmtOpcode(), FmtTxOffset()])(enabledAndIsAuction, p_req.chunks, [req.opType, conn.txId - ori_order1.txId]);
-    Chunkify(3, [FmtOpcode(), FmtTxOffset(), FmtPacked()])(And()(enabled, Or()(isSecondaryLimit, isSecondaryMarket)), p_req.chunks, [req.opType, conn.txId - ori_order1.txId, packedAmt1]);
+    Chunkify(2, [FmtOpcode(), FmtTxOffset()])(And()(enabled, Or()(isSecondaryLimit, isSecondaryMarket)), p_req.chunks, [req.opType, conn.txId - ori_order1.txId]);
 
     signal channelOutIfAuction[LenOfChannel()] <== Channel_New()(newBorrow, [channel_in.args[0]/*oriCumAmt0*/, channel_in.args[1]/*oricumamt1*/, channel_in.args[2], ori_order1_req.arg[3]/*PIR*/, 0]);
     signal channelOutIfSecondary[LenOfChannel()] <== Channel_New()(newTaker, [channel_in.args[0]/*oriCumAmt0*/, channel_in.args[1]/*oricumamt1*/, channel_in.args[2], 0, 0]);
@@ -1050,10 +1050,10 @@ template DoReqInteract(){
     This template is used to verify AuctionEnd (AE), SecondLimitEnd (SLE) requests.
 
     Items that require verification for AuctionEnd:
-    AE-11. If the borrow order has no more matches in this round, matched borrowing amount > fee
+    AE-11. If the borrow order has no more matches in this round, check that matched borrowing amount > fee
     AE-12. If the borrow order has no more matches in this round, distribute the matched loan to borrower	
     AE-13. If the borrow order has no more matches in this round, calculate the fee to charge the borrower	
-    AE-14. If the borrow order has no more matches in this round, deduct the collateral amount in the mathced orders from the total locked collateral amount	
+    AE-14. If the borrow order has no more matches in this round, deduct the collateral amount in the matched orders from the total locked collateral amount	
     AE-15. If the borrow order has no more matches in this round, the Backend constructs L2 admin request: AuctionEnd
         *   Validate the signature in template: DoRequest()
         *   In this template, read request based on this format.
@@ -1122,7 +1122,7 @@ template DoReqEnd(){
     //      We will reinsert the order into order tree, check if it's a empty order leaf.
     ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_Default()(), conn.orderLeaf[0][0]);
 
-    // AE-11. If the borrow order has no more matches in this round, matched borrowing amount > fee
+    // AE-11. If the borrow order has no more matches in this round, check that matched borrowing amount > fee
     // SLE-26.If there is no more maker to match with a taker and if the taker is a seller, check if matchedBQ is greater than or equal to the taker's fees	
     ImplyEq()(enabled, 1, TagLessEqThan(BitsAmount())([feeFromTarget, matched_amt1]));
 
@@ -1134,7 +1134,7 @@ template DoReqEnd(){
 
     // AE-12. If the borrow order has no more matches in this round, distribute the matched loan to borrower	
     // AE-13. If the borrow order has no more matches in this round, calculate the fee to charge the borrower	
-    // AE-14. If the borrow order has no more matches in this round, deduct the collateral amount in the mathced orders from the total locked collateral amount	
+    // AE-14. If the borrow order has no more matches in this round, deduct the collateral amount in the matched orders from the total locked collateral amount	
     // AE-16. If the borrow order is completed, return the remaining locked amount in the borrow order
     // SLE-27.If there is no more maker to match with a taker, charge fee from the taker
     // SLE-28.If there is no more maker to match with a taker, and if the taker's order has been completed, return the remaining locked amount in the order
@@ -1440,7 +1440,7 @@ template DoReqIncreaseEpoch(){
 }
 
 /*
-    This template is used to verify CreateTSBTokenToken requests.
+    This template is used to verify CreateTSBToken requests.
 
     Items that require verification:
     0. Backend constructs L1 request: CreateTsbToken
@@ -1450,7 +1450,7 @@ template DoReqIncreaseEpoch(){
     3. Backend updates TSB token leaf
 
 */
-template DoReqCreateTSBTokenToken(){
+template DoReqCreateTSBToken(){
     signal input {bool} enabled;
     signal input currentTime, channelIn[LenOfChannel()], oriState[LenOfState()], newState[LenOfState()], preprocessedReq[LenOfPreprocessedReq()];
     signal output channelOut[LenOfChannel()];

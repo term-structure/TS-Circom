@@ -1,6 +1,6 @@
 pragma circom 2.1.5;
 
-function BitsOpType()     { return 8; }
+function BitsOpType()      { return 8; }
 function BitsTokenId()     { return 16; }
 function BitsAccId()       { return 32; }
 function BitsNonce()       { return 64; }

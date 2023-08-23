@@ -68,7 +68,7 @@ template Evacuation(){
     signal input currentTime;
     signal output commitment;
 
-    signal expectedStateRoot <== Poseidon(2)([tsRoot, accRoot]);
+    signal expectedStateRoot <== PoseidonSpecificLen(2)([tsRoot, accRoot]);
     expectedStateRoot === stateRoot;
     VerifyExists(AccTreeHeight())(accId, PoseidonSpecificLen(LenOfAccLeaf())([tsAddr, nonce, tokenRoot]), accMkPrf, accRoot);
     VerifyExists(TokenTreeHeight())(tokenId, PoseidonSpecificLen(LenOfTokenLeaf())([avlAmt, lockedAmt]), tokenMkPrf, tokenRoot);
