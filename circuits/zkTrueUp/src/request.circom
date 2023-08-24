@@ -699,6 +699,7 @@ template DoReqPlaceOrder(){
     // AB-13.Backend adds this order to the order list
     // AL-11.Backend adds this order to the order list
     // SL-14.Backend adds this order to the order list
+    ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_Default()(), conn.orderLeaf[0][0]);
     ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_Place()(p_req.req, 0, 0, conn.txId, lock_amt), conn.orderLeaf[0][1]);
 
     // AB-2. Check if borrowingAmt, feeRate, collateralAmt, PIR can be converted to floating point numbers
