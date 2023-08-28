@@ -1,0 +1,10 @@
+{
+  "blockNumber": "8",
+  "stateRoot": "0x2b757d34221dce9fbd2c3eddac5eefbd93e9c93765b434349d43a318a3e21561",
+  "tsRoot": "0x004afb3749eee840f7bafbcb8ef4e4c380211d3723b13ccdeac103412e069897",
+  "l1RequestNum": "0",
+  "pendingRollupTxHash": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+  "commitment": "0xabe5125793e9f18b3d77c8ad986dea7cdeb13d418f952b64bbab2f48a4a716ff",
+  "timestamp": "1690970004",
+  "endTxId": "32"
+}

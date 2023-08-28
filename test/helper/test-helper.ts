@@ -394,7 +394,7 @@ export function createMainCircuit(circuitMainPath: string, config: TsRollupConfi
 
   createSpecCircuit(`${pathArr.join('/')}/spec.circom`, config, metadata);
   writeFileSync(circuitMainPath, 
-    `pragma circom 2.1.2;
+    `pragma circom 2.1.5;
 include "spec.circom";
 include "../../circuits/${name}/normal.circom";
 
@@ -405,7 +405,7 @@ component main = Normal();
 
 function createSpecCircuit(specPath: string, config: TsRollupConfigType, metadata: any) {
   writeFileSync(specPath, 
-    `pragma circom 2.1.2;
+    `pragma circom 2.1.5;
 function OrderTreeHeight(){
   return ${config.order_tree_height};
 }
@@ -432,7 +432,7 @@ function DefaultNullifierRoot(){
   return ${metadata.defaultNulliferRoot};
 }
 
-function BondTreeHeight(){
+function TSBTokenTreeHeight(){
   return ${config.bond_tree_height};
 }
 
@@ -454,7 +454,7 @@ function MaxNullifierUnitsPerReq(){
 function MaxFeeUnitsPerReq(){
   return 1;
 }
-function MaxBondUnitsPerReq(){
+function MaxTSBTokenUnitsPerReq(){
   return 1;
 }
 function MaxChunksPerReq(){
@@ -474,7 +474,7 @@ function NumOfFeeUnits(){
   return NumOfReqs() * MaxFeeUnitsPerReq();
 }
 function NumOfBondUnits(){
-  return NumOfReqs() * MaxBondUnitsPerReq();
+  return NumOfReqs() * MaxTSBTokenUnitsPerReq();
 }
 function NumOfOuts(){
   return (NumOfChunks() + 5) \\ 6;
