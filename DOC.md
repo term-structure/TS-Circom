@@ -302,34 +302,35 @@ The detailed constraints specified in the circuit are listed in [Requests Handli
 
 The data type of requests be defined as follows:
 
-|Request <br> Symbol <br> DataType|reqData[0] <br> reqType <br> uint8|reqData[1] <br> accountId <br> uint32|reqData[2] <br> tokenId <br> uint16|reqData[3] <br> amount <br> uint120|reqData[4] <br> nonce <br> uint64|reqData[5] <br> fee0 <br> uint64|reqData[6] <br> fee1 <br> uint64|reqData[7] <br> txFeeTokenId <br> uint16|reqData[8] <br> txFeeAmt <br> uint120|reqData[9] <br> arg0 <br> uint32|reqData[10] <br> arg1 <br> uint32|reqData[11] <br> arg2 <br> uint32|reqData[12] <br> arg3 <br> uint64|reqData[13] <br> arg4 <br> uint16|reqData[14] <br> arg5 <br> uint120|reqData[15] <br> arg6 <br> bytes20|reqData[16] <br> arg7 <br> uint128|reqData[17] <br> arg8 <br> uint8|reqData[18] <br> arg9 <br> uint64|reqData[19] <br> arg10 <br> uint256|
+|Request<br />Symbol<br />DataType|reqData[0]<br />reqType<br />uint8|reqData[1]<br />accountId<br />uint32|reqData[2]<br />tokenId<br />uint16|reqData[3]<br />amount<br />uint114|reqData[4]<br />nonce<br />uint64|reqData[5]<br />fee0<br />uint32|reqData[6]<br />fee1<br />uint32|reqData[7]<br />txFeeTokenId<br />uint16|reqData[8]<br />txFeeAmt<br />uint114|reqData[9]<br />arg0<br />uint32|reqData[10]<br />arg1<br />uint32|reqData[11]<br />arg2<br />uint32|reqData[12]<br />arg3<br />uint32|reqData[13]<br />arg4<br />uint16|reqData[14]<br />arg5<br />uint114|reqData[15]<br />arg6<br />uint160|reqData[16]<br />arg7<br />uint128|reqData[17]<br />arg8<br />uint1|reqData[18]<br />arg9<br />uint32|reqData[19]<br />arg10<br />Field|
 |--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|
 |noop|0||||||||||||||||||||
 |register|1|||||||||receiverId||||||tsAddr|||||
 |deposit|2||tokenId|amount||||||receiverId|||||||||||
 |forcedWithdraw|3||tokenId|||||||receiverId|||||||||||
-|transfer|4|senderId|tokenId|amount|nonce|||||receiverId|||||||||||
+|transfer|4|senderId|tokenId|amount|nonce|||txFeeTokenId|txFeeAmt|receiverId|||||||||||
 |withdraw|5|senderId|tokenId|amount|nonce|||txFeeTokenId|txFeeAmt||||||||||||
-|auctionLend|6|senderId|lendTokenId|lendAmt|orderNonce|auctionLendFeeRate|||||maturityTime|expiredTime|PIR(principal and interest rate)||||epoch||defaultMatchedInterestRate||
-|auctionBorrow|7|senderId|collateralTokenId|collateralAmt|orderNonce|auctionBorrowFeeRate|||||maturityTime|expiredTime|PIR|borrowTokenId|borrowAmt||epoch||||
+|auctionLend|6|senderId|lendTokenId|lendAmt|orderNonce|primaryLendFeeRate||txFeeTokenId|txFeeAmt||maturityTime|expiredTime|PIR(principal and interest rate)||||epoch||defaultMatchedInterestRate||
+|auctionBorrow|7|senderId|collateralTokenId|collateralAmt|orderNonce|primaryBorrowFeeRate||txFeeTokenId|txFeeAmt||maturityTime|expiredTime|PIR|borrowTokenId|borrowAmt||epoch||||
 |auctionStart|8||||omNonce||||||||matchedPIR||||||||
 |auctionMatch|9||||omNonce||||||||||||||||
 |auctionEnd|10||||omNonce||||||||||||||||
-|secondLimitOrder|11|senderId|sellTokenId|sellAmt|orderNonce|secondaryTakerFeeRate|secondaryMakerFeeRate|||||expiredTime||buyTokenId|buyAmt||epoch|side (buy=0, sell=1)|||
+|secondLimitOrder|11|senderId|sellTokenId|sellAmt|orderNonce|secondaryTakerFeeRate|secondaryMakerFeeRate|txFeeTokenId|txFeeAmt|||expiredTime||buyTokenId|buyAmt|||side (buy=0, sell=1)|||
 |secondLimitStart|12||||omNonce||||||||||||||||
 |secondLimitExchange|13||||omNonce||||||||||||||||
 |secondLimitEnd|14||||omNonce||||||||||||||||
-|secondMarketOrder|15|senderId|sellTokenId|sellAmt|orderNonce|secondaryTakerFeeRate||||||expiredTime||buyTokenId|buyAmt||epoch|side|||
+|secondMarketOrder|15|senderId|sellTokenId|sellAmt|orderNonce|secondaryTakerFeeRate||txFeeTokenId|txFeeAmt|||expiredTime||buyTokenId|buyAmt||epoch|side|||
 |secondMarketExchange|16||||omNonce||||||||||||||||
 |secondMarketEnd|17||||omNonce||||||||||||||||
 |adminCancelOrder|18||||omNonce||||||||||||||||
-|userCancelOrder|19|senderId||||||txFeeTokenId|txFeeAmt||orderTxId|orderNum||||||||orderHash|
+|userCancelOrder|19|senderId||||||txFeeTokenId|txFeeAmt|||||||||||orderHash|
 |increaseEpoch|20||||omNonce||||||||||||||||
 |createTsbToken|21||bondTokenId||||||||maturityTime|||baseTokenId|||||||
-|redeem|22|senderId|bondTokenId|amount|nonce||||||||||||||||
+|redeem|22|senderId|bondTokenId|amount|nonce|||txFeeTokenId|txFeeAmt||||||||||||
 |withdrawFee|23||tokenId||opNonce||||||||||||||||
 |evacuation|24||tokenId|||||||senderId|||||||||||
 |setAdminTsAddr|25||||opNonce|||||||||||tsAddr|||||
+|adminRefund|26||tokenId|amount||||||receiverId|||||||||||
 
 ## General Constraints for All Requests
 
@@ -355,7 +356,7 @@ The constraints for each kind of request can be further categorized into three m
  * Correctness: which checks if the new state is correct, which is the signal assigned from parameters.
  * Chunkify: which encodes the _calldata_ that will interact with the contract.
 
-For details, please refer to [zkTrue-up Spec](https://docs.google.com/spreadsheets/d/1NL2Y0Gz_Xczo1ZUPZoifMk3-zTM84bQt7BtaZiZSUFU/edit#gid=2074446946). 
+For details, please refer to [zkTrue-up Spec](https://docs.google.com/spreadsheets/d/1m6KdjK9lI3K57VV0s8d39IyCtv8YeM3uCK69OBcVne4/edit#gid=1080561729). 
 
 ### Noop
 
