@@ -48,7 +48,7 @@ template ImplyEqArr(len){
         ImplyEq()(enabled, in_0[i], in_1[i]);
 }
 template IntDivide(bits_divisor){
-    // def: if dividend is >= 2^253, then the quotient and remainder are both 0
+    // def: if dividend is >= 2^253 or divisor = 0, then the quotient and remainder are both 0
     // No matter what input is given, `intDivide` will always output successfully.
     signal input dividend;
     signal input divisor;
@@ -56,8 +56,9 @@ template IntDivide(bits_divisor){
     signal output remainder;
     _ <== Num2Bits(bits_divisor)(divisor);
     signal bits_dividend[ConstFieldBitsFull()] <== Num2Bits_strict()(dividend);
-    signal dividend_ <== dividend * (1 - bits_dividend[ConstFieldBitsFull() - 1]);
-    (quotient, remainder) <-- (dividend_ \ divisor, dividend_ % divisor);
+    signal mask <== Not()(Or()(TagIsZero()(divisor), Bool()(bits_dividend[ConstFieldBitsFull() - 1])));
+    signal dividend_ <== dividend * mask;
+    (quotient, remainder) <-- (mask ? dividend_ \ divisor : 0, mask ? dividend_ % divisor : 0);
     quotient * divisor + remainder === dividend_;
     signal slt <== TagLessThan(bits_divisor)([remainder, divisor]);
     slt === 1;
