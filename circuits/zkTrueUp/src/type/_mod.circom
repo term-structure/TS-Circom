@@ -162,9 +162,9 @@ template OrderLeaf_Alloc(){
     component order_leaf = OrderLeaf();
     order_leaf.arr <== arr;
     _ <== Req_Alloc()(order_leaf.req);
-    _ <== Num2Bits(BitsAmount())(order_leaf.cumAmt0);
-    _ <== Num2Bits(BitsAmount())(order_leaf.cumAmt1);
-    _ <== Num2Bits(BitsAmount())(order_leaf.lockedAmt);
+    _ <== Num2Bits(BitsUnsignedAmt())(order_leaf.cumAmt0);
+    _ <== Num2Bits(BitsUnsignedAmt())(order_leaf.cumAmt1);
+    _ <== Num2Bits(BitsUnsignedAmt())(order_leaf.lockedAmt);
 }
 function LenOfOrderUnit(){
     return LenOfUnit(LenOfOrderLeaf(), OrderTreeHeight());
