@@ -654,7 +654,7 @@ template DoReqPlaceOrder(){
     
     // AB-5. Check if expiredTime is legal
     // AL-5. Check if t_e is valid
-    ImplyEq()(isAuc, 1, TagLessEqThan(BitsTime())([req.arg[2] + 86400, tSBToken.maturity]));
+    ImplyEq()(isAuc, 1, TagLessEqThan(BitsTime() + 1)([req.arg[2] + 86400, tSBToken.maturity]));
     
     // SL-5. Check if t_e is valid
     ImplyEq()(is2nd, 1, TagLessEqThan(BitsTime())([req.arg[2], tSBToken.maturity]));
@@ -662,13 +662,13 @@ template DoReqPlaceOrder(){
     // AB-7. Check interest lower limit
     // (PIR * daysFromMatched + 366 * one) > daysFromMatched * one + PIR
     signal daysFromMatchedIfEnabled <== daysFromMatched * enabled;
-    ImplyEq()(isAuc, 1, TagGreaterEqThan(BitsRatio() + BitsTime())([req.arg[3]/*PIR*/ * daysFromMatchedIfEnabled + 366 * one, daysFromMatchedIfEnabled * one + req.arg[3]/*PIR*/]));
+    ImplyEq()(isAuc, 1, TagGreaterEqThan(BitsRatio() + BitsTime() + 1)([req.arg[3]/*PIR*/ * daysFromMatchedIfEnabled + 366 * one, daysFromMatchedIfEnabled * one + req.arg[3]/*PIR*/]));
 
     // SL-7. Check interest lower limit
     // (MQ * daysFromMatched + 365 * BQ) > (BQ * daysFromMatched)
     signal MQ <== Mux(2)([req.arg[5]/*target amount*/, req.amount], is2ndSell);
     signal BQ <== Mux(2)([req.arg[5]/*target amount*/, req.amount], is2ndBuy);
-    ImplyEq()(is2nd, 1, TagGreaterThan(BitsRatio() + BitsTime())([MQ * daysFromMatchedIfEnabled + 365 * BQ, BQ * daysFromMatchedIfEnabled]));
+    ImplyEq()(is2nd, 1, TagGreaterThan(BitsUnsignedAmt() + BitsTime() + 1)([MQ * daysFromMatchedIfEnabled + 365 * BQ, BQ * daysFromMatchedIfEnabled]));
 
     /* correctness */
 
@@ -1474,7 +1474,7 @@ template DoReqCreateTSBToken(){
     ImplyEq()(enabled, 1, TagLessThan(BitsTime())([currentTime - p_req.matchedTime[0], ConstSecondsPerDay()]));
 
     // 2. Backend checks if maturity is within 80 * 365 days
-    ImplyEq()(enabled, 1, TagGreaterThan(BitsTime())([p_req.matchedTime[0] + 86400 * upper_lim_of_days, tSBToken.maturity]));
+    ImplyEq()(enabled, 1, TagGreaterThan(BitsTime() + 1)([p_req.matchedTime[0] + 86400 * upper_lim_of_days, tSBToken.maturity]));
 
     /* correctness */
 
