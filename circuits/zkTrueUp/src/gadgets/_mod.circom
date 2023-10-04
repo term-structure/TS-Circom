@@ -62,6 +62,7 @@ template IntDivide(bits_divisor){
     quotient * divisor + remainder === dividend_;
     signal slt <== TagLessThan(bits_divisor)([remainder, divisor]);
     slt === 1;
+    _ <== Num2Bits(bits_divisor)(remainder);
     _ <== Num2Bits(ConstFieldBits() - bits_divisor)(quotient);
 }
 template PoseidonArbitraryLen(len){
