@@ -1032,12 +1032,6 @@ template DoReqInteract(){
     // SMI-12. Perform Interact on the specified buy order and sell order
     ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_DefaultIf()(newNewOrder1, isFull), conn.orderLeaf[0][1]);
 
-    // AB-2. Check if borrowingAmt, feeRate, collateralAmt, PIR can be converted to floating point numbers
-    // AL-2. Check if lendingAmt, feeRate, defaultPIR can be converted to floating point numbers
-    // SL-2. Check if MQ, BQ, feeRate can be converted to floating point numbers
-    // SM-2. Check if MQ, BQ, makerFeeRate, takerFeeRate can be converted to floating point numbers
-    signal packedAmt1 <== Fix2FloatCond()(enabled, ori_order1_req.arg[5]/*target amount*/);
-
     Chunkify(2, [FmtOpcode(), FmtTxOffset()])(enabledAndIsAuction, p_req.chunks, [req.opType, conn.txId - ori_order1.txId]);
     Chunkify(2, [FmtOpcode(), FmtTxOffset()])(And()(enabled, Or()(isSecondaryLimit, isSecondaryMarket)), p_req.chunks, [req.opType, conn.txId - ori_order1.txId]);
 
@@ -1092,7 +1086,6 @@ template DoReqEnd(){
     
     signal isAuction <== TagIsEqual()([req.opType, OpTypeNumAuctionEnd()]);
     signal isSecondaryLimit <== TagIsEqual()([req.opType, OpTypeNumSecondLimitEnd()]);
-    signal isSecondaryMarket <== TagIsEqual()([req.opType, OpTypeNumSecondMarketEnd()]);
     
     /* Calc fee */
     // There are two ways to collect fees.
