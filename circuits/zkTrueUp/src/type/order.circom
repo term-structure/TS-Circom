@@ -6,6 +6,8 @@ template OrderLeaf_Place(){
     signal input cumAmt1;
     signal input txId;
     signal input lockedAmt;
+    signal input cumFeeAmt;
+    signal input creditAmt;
     var order[LenOfOrderLeaf()];
     for(var i = 0; i < LenOfReq(); i++)
         order[i] = req[i];
@@ -13,6 +15,8 @@ template OrderLeaf_Place(){
     order[LenOfReq() + 1] = cumAmt0;
     order[LenOfReq() + 2] = cumAmt1;
     order[LenOfReq() + 3] = lockedAmt;
+    order[LenOfReq() + 4] = cumFeeAmt;
+    order[LenOfReq() + 5] = creditAmt;
     signal output arr[LenOfOrderLeaf()] <== OrderLeaf_Alloc()(order);
 }
 template OrderLeaf_Default(){
@@ -37,6 +41,34 @@ template OrderLeaf_DeductLockedAmt(){
         if(i == LenOfReq() + 3){
             _ <== Num2Bits(BitsUnsignedAmt())((orderLeaf[i] - amt) * enabled);
             arr[i] <== orderLeaf[i] - amt;
+        }
+        else
+            arr[i] <== orderLeaf[i];
+    }
+}
+template OrderLeaf_UpdateCumFeeAmt(){
+    signal input orderLeaf[LenOfOrderLeaf()];
+    signal input enabled;
+    signal input amt;
+    signal output arr[LenOfOrderLeaf()];
+    _ <== Num2Bits(BitsUnsignedAmt())(amt * enabled);
+    for(var i = 0; i < LenOfOrderLeaf(); i++){
+        if(i == LenOfReq() + 4){
+            arr[i] <== orderLeaf[i] + amt;
+        }
+        else
+            arr[i] <== orderLeaf[i];
+    }
+}
+template OrderLeaf_UpdateCreditAmt(){
+    signal input orderLeaf[LenOfOrderLeaf()];
+    signal input enabled;
+    signal input amt;
+    signal output arr[LenOfOrderLeaf()];
+    _ <== Num2Bits(BitsUnsignedAmt())(amt * enabled);
+    for(var i = 0; i < LenOfOrderLeaf(); i++){
+        if(i == LenOfReq() + 5){
+            arr[i] <== amt;
         }
         else
             arr[i] <== orderLeaf[i];

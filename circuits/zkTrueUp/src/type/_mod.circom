@@ -34,17 +34,18 @@ template Bool(){
     a * (1 - a) === 0;
 }
 function LenOfReq(){
-    return 20;
+    return 22;
 }
 template Req(){
     signal input arr[LenOfReq()];
     signal output (opType, accId, tokenId, amount, nonce, fee0, fee1, txFeeTokenId, txFeeAmt) <== (arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8]);
     signal output arg[LenOfReq() - 9] <== Slice(LenOfReq(), 9, LenOfReq() - 9)(arr);
+    signal output (minFeeAmt0, minFeeAmt1) <== (arr[20], arr[21]);
 }
 template Req_Alloc(){
     signal input raw[LenOfReq()];
     signal output arr[LenOfReq()] <== raw;
-    var bits[LenOfReq()] = [BitsOpType(), BitsAccId(), BitsTokenId(), BitsUnsignedAmt(), BitsNonce(), BitsRatio(), BitsRatio(), BitsTokenId(), BitsUnsignedAmt(), BitsAccId(), BitsTime(), BitsTime(), BitsRatio(), BitsTokenId(), BitsUnsignedAmt(), BitsTsAddr(), BitsEpoch(), BitsSide(), BitsRatio(), ConstFieldBitsFull()];
+    var bits[LenOfReq()] = [BitsOpType(), BitsAccId(), BitsTokenId(), BitsUnsignedAmt(), BitsNonce(), BitsRatio(), BitsRatio(), BitsTokenId(), BitsUnsignedAmt(), BitsAccId(), BitsTime(), BitsTime(), BitsRatio(), BitsTokenId(), BitsUnsignedAmt(), BitsTsAddr(), BitsEpoch(), BitsSide(), BitsRatio(), ConstFieldBitsFull(), BitsUnsignedAmt(), BitsUnsignedAmt()];
     for(var i = 0; i < LenOfReq(); i++)
         _ <== Num2Bits(bits[i])(arr[i]);
 }
@@ -149,12 +150,12 @@ template AccUnit_Alloc(){
     _ <== AccLeaf_Alloc()(acc_unit.newLeaf);
 }
 function LenOfOrderLeaf(){
-    return LenOfReq() + 4;
+    return LenOfReq() + 6;
 }
 template OrderLeaf(){
     signal input arr[LenOfOrderLeaf()];
     signal output req[LenOfReq()] <== Slice(LenOfOrderLeaf(), 0, LenOfReq())(arr);
-    signal output (txId, cumAmt0, cumAmt1, lockedAmt) <== (arr[LenOfReq()], arr[LenOfReq() + 1], arr[LenOfReq() + 2], arr[LenOfReq() + 3]);
+    signal output (txId, cumAmt0, cumAmt1, lockedAmt, cumFeeAmt, creditAmt) <== (arr[LenOfReq()], arr[LenOfReq() + 1], arr[LenOfReq() + 2], arr[LenOfReq() + 3], arr[LenOfReq() + 4], arr[LenOfReq() + 4]);
 }
 template OrderLeaf_Alloc(){
     signal input raw[LenOfOrderLeaf()];
@@ -162,9 +163,11 @@ template OrderLeaf_Alloc(){
     component order_leaf = OrderLeaf();
     order_leaf.arr <== arr;
     _ <== Req_Alloc()(order_leaf.req);
-    _ <== Num2Bits(BitsAmount())(order_leaf.cumAmt0);
-    _ <== Num2Bits(BitsAmount())(order_leaf.cumAmt1);
-    _ <== Num2Bits(BitsAmount())(order_leaf.lockedAmt);
+    _ <== Num2Bits(BitsUnsignedAmt())(order_leaf.cumAmt0);
+    _ <== Num2Bits(BitsUnsignedAmt())(order_leaf.cumAmt1);
+    _ <== Num2Bits(BitsUnsignedAmt())(order_leaf.lockedAmt);
+    _ <== Num2Bits(BitsUnsignedAmt())(order_leaf.cumFeeAmt);
+    _ <== Num2Bits(BitsUnsignedAmt())(order_leaf.creditAmt);
 }
 function LenOfOrderUnit(){
     return LenOfUnit(LenOfOrderLeaf(), OrderTreeHeight());

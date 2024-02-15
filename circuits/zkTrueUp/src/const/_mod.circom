@@ -40,7 +40,14 @@ function ConstIsAdminReq(){
         0,//Redeem
         1,//WithdrawFee
         1,//Evacuation
-        1 //SetAdminTsAddr
+        1,//SetAdminTsAddr
+        222,//Evacuation
+        222,//Evacuation
+        222,//Evacuation
+        222,//Evacuation
+        222,//Evacuation
+        222,//Evacuation
+        222 //Evacuation
     ];
 }
 function ConstChunkCount(){
@@ -60,7 +67,7 @@ function ConstChunkCount(){
         1,//SecondLimitStart
         1,//SecondLimitExchange
         1,//SecondLimitEnd
-        3,//SecondMarketOrder
+        4,//SecondMarketOrder
         1,//SecondMarketExchange
         1,//SecondMarketEnd
         1,//AdminCancel
@@ -70,7 +77,14 @@ function ConstChunkCount(){
         2,//Redeem
         2,//WithdrawFee
         2,//Evacuation
-        1 //SetAdminTsAddr
+        1,//SetAdminTsAddr
+        222,//Evacuation
+        222,//Evacuation
+        222,//Evacuation
+        222,//Evacuation
+        222,//Evacuation
+        222,//Evacuation
+        222 //Evacuation
     ];
 }
 function ConstIsCriticalReq(){
@@ -100,6 +114,13 @@ function ConstIsCriticalReq(){
         0,//Redeem
         1,//WithdrawFee
         1,//Evacuation
-        0 //SetAdminTsAddr
+        0,//SetAdminTsAddr
+        222,//Evacuation
+        222,//Evacuation
+        222,//Evacuation
+        222,//Evacuation
+        222,//Evacuation
+        222,//Evacuation
+        222 //Evacuation
     ];
 }

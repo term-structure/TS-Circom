@@ -26,4 +26,11 @@ function OpTypeNumRedeem()               { return 22; }
 function OpTypeNumWithdrawFee()          { return 23; }
 function OpTypeNumEvacuation()           { return 24; }
 function OpTypeNumSetAdminTsAddr()       { return 25; }
-function OpTypeCount()                   { return 26; }
+function OpTypeNumRollBorrowOrder()      { return 26; }
+function OpTypeNumRollOverStart()        { return 27; }
+function OpTypeNumRollOverMatch()        { return 28; }
+function OpTypeNumRollOverEnd()          { return 29; }
+function OpTypeNumUserCancelRollOrder()  { return 30; }
+function OpTypeNumAdminCancelRollOrder() { return 31; }
+function OpTypeNumForceCancelRollOrder() { return 32; }
+function OpTypeCount()                   { return 33; }

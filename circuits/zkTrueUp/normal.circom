@@ -47,32 +47,39 @@ template DoRequest(){
 
     // Dispatch
     signal channel[OpTypeCount()][LenOfChannel()];
-    channel[ 0] <== DoReqNoop              ()(TagIsEqual()([opType, OpTypeNumNoop()])                 , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[ 1] <== DoReqRegister          ()(TagIsEqual()([opType, OpTypeNumRegister()])             , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[ 2] <== DoReqDeposit           ()(TagIsEqual()([opType, OpTypeNumDeposit()])              , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[ 3] <== DoReqForcedWithdraw    ()(TagIsEqual()([opType, OpTypeNumForcedWithdraw()])       , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[ 4] <== DoReqTransfer          ()(TagIsEqual()([opType, OpTypeNumTransfer()])             , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[ 5] <== DoReqWithdraw          ()(TagIsEqual()([opType, OpTypeNumWithdraw()])             , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[ 6] <== DoReqPlaceOrder        ()(TagIsEqual()([opType, OpTypeNumAuctionLend()])          , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[ 7] <== DoReqPlaceOrder        ()(TagIsEqual()([opType, OpTypeNumAuctionBorrow()])        , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[ 8] <== DoReqStart             ()(TagIsEqual()([opType, OpTypeNumAuctionStart()])         , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[ 9] <== DoReqInteract          ()(TagIsEqual()([opType, OpTypeNumAuctionMatch()])         , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[10] <== DoReqEnd               ()(TagIsEqual()([opType, OpTypeNumAuctionEnd()])           , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[11] <== DoReqPlaceOrder        ()(TagIsEqual()([opType, OpTypeNumSecondLimitOrder()])     , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[12] <== DoReqStart             ()(TagIsEqual()([opType, OpTypeNumSecondLimitStart()])     , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[13] <== DoReqInteract          ()(TagIsEqual()([opType, OpTypeNumSecondLimitExchange()])  , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[14] <== DoReqEnd               ()(TagIsEqual()([opType, OpTypeNumSecondLimitEnd()])       , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[15] <== DoReqSecondMarketOrder ()(TagIsEqual()([opType, OpTypeNumSecondMarketOrder()])    , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[16] <== DoReqInteract          ()(TagIsEqual()([opType, OpTypeNumSecondMarketExchange()]) , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[17] <== DoReqSecondMarketEnd   ()(TagIsEqual()([opType, OpTypeNumSecondMarketEnd()])      , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[18] <== DoReqAdminCancel       ()(TagIsEqual()([opType, OpTypeNumAdminCancelOrder()])     , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[19] <== DoReqUserCancel        ()(TagIsEqual()([opType, OpTypeNumUserCancelOrder()])      , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[20] <== DoReqIncreaseEpoch     ()(TagIsEqual()([opType, OpTypeNumIncreaseEpoch()])        , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[21] <== DoReqCreateTSBToken   ()(TagIsEqual()([opType, OpTypeNumCreateTSBToken()])       , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[22] <== DoReqRedeem            ()(TagIsEqual()([opType, OpTypeNumRedeem()])               , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[23] <== DoReqWithdrawFee       ()(TagIsEqual()([opType, OpTypeNumWithdrawFee()])          , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[24] <== DoReqEvacuation        ()(TagIsEqual()([opType, OpTypeNumEvacuation()])           , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[25] <== DoReqSetAdminTsAddr    ()(TagIsEqual()([opType, OpTypeNumSetAdminTsAddr()])       , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[ 0] <== DoReqNoop                 ()(TagIsEqual()([opType, OpTypeNumNoop()])                 , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[ 1] <== DoReqRegister             ()(TagIsEqual()([opType, OpTypeNumRegister()])             , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[ 2] <== DoReqDeposit              ()(TagIsEqual()([opType, OpTypeNumDeposit()])              , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[ 3] <== DoReqForcedWithdraw       ()(TagIsEqual()([opType, OpTypeNumForcedWithdraw()])       , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[ 4] <== DoReqTransfer             ()(TagIsEqual()([opType, OpTypeNumTransfer()])             , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[ 5] <== DoReqWithdraw             ()(TagIsEqual()([opType, OpTypeNumWithdraw()])             , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[ 6] <== DoReqPlaceOrder           ()(TagIsEqual()([opType, OpTypeNumAuctionLend()])          , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[ 7] <== DoReqPlaceOrder           ()(TagIsEqual()([opType, OpTypeNumAuctionBorrow()])        , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[ 8] <== DoReqStart                ()(TagIsEqual()([opType, OpTypeNumAuctionStart()])         , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[ 9] <== DoReqInteract             ()(TagIsEqual()([opType, OpTypeNumAuctionMatch()])         , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[10] <== DoReqEnd                  ()(TagIsEqual()([opType, OpTypeNumAuctionEnd()])           , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[11] <== DoReqPlaceOrder           ()(TagIsEqual()([opType, OpTypeNumSecondLimitOrder()])     , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[12] <== DoReqStart                ()(TagIsEqual()([opType, OpTypeNumSecondLimitStart()])     , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[13] <== DoReqInteract             ()(TagIsEqual()([opType, OpTypeNumSecondLimitExchange()])  , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[14] <== DoReqEnd                  ()(TagIsEqual()([opType, OpTypeNumSecondLimitEnd()])       , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[15] <== DoReqSecondMarketOrder    ()(TagIsEqual()([opType, OpTypeNumSecondMarketOrder()])    , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[16] <== DoReqInteract             ()(TagIsEqual()([opType, OpTypeNumSecondMarketExchange()]) , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[17] <== DoReqSecondMarketEnd      ()(TagIsEqual()([opType, OpTypeNumSecondMarketEnd()])      , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[18] <== DoReqAdminCancel          ()(TagIsEqual()([opType, OpTypeNumAdminCancelOrder()])     , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[19] <== DoReqUserCancel           ()(TagIsEqual()([opType, OpTypeNumUserCancelOrder()])      , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[20] <== DoReqIncreaseEpoch        ()(TagIsEqual()([opType, OpTypeNumIncreaseEpoch()])        , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[21] <== DoReqCreateTSBToken       ()(TagIsEqual()([opType, OpTypeNumCreateTSBToken()])       , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[22] <== DoReqRedeem               ()(TagIsEqual()([opType, OpTypeNumRedeem()])               , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[23] <== DoReqWithdrawFee          ()(TagIsEqual()([opType, OpTypeNumWithdrawFee()])          , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[24] <== DoReqEvacuation           ()(TagIsEqual()([opType, OpTypeNumEvacuation()])           , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[25] <== DoReqSetAdminTsAddr       ()(TagIsEqual()([opType, OpTypeNumSetAdminTsAddr()])       , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[26] <== DoReqRollBorrowOrder      ()(TagIsEqual()([opType, OpTypeNumRollBorrowOrder()])      , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[27] <== DoReqRollOverStart        ()(TagIsEqual()([opType, OpTypeNumRollOverStart()])        , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[28] <== DoReqInteract             ()(TagIsEqual()([opType, OpTypeNumRollOverMatch()])        , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[29] <== DoReqRollOverEnd          ()(TagIsEqual()([opType, OpTypeNumRollOverEnd()])          , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[30] <== DoReqCancelRollOrder      ()(TagIsEqual()([opType, OpTypeNumUserCancelRollOrder()])  , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[31] <== DoReqCancelRollOrder      ()(TagIsEqual()([opType, OpTypeNumAdminCancelRollOrder()]) , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[32] <== DoReqCancelRollOrder      ()(TagIsEqual()([opType, OpTypeNumForceCancelRollOrder()]) , currentTime, channelIn, oriState, newState, preprocessedReq);
 
     channelOut <== Multiplexer(LenOfChannel(), OpTypeCount())(channel, opType);
 }
@@ -141,6 +148,7 @@ template Normal(){
     cumChunkCount[0] <== 0;
     for(var i = 0; i < NumOfReqs(); i++){
         // Request Execution
+        log("i= ", i);
         (channelData[i + 1], r_chunks[i], chunkCount[i], isNoopReq[i], isCriticalReq[i]) <== DoRequest()(currentTime, channelData[i], state[i], state[i + 1], preprocessedReq[i]);
         
         // Perform cumulative addition on chunkCount

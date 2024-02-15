@@ -163,7 +163,7 @@ template AuctionMechanism(){
     assert((BitsAmount() + BitsAmount()) <= ConstFieldBits());
     // Underflow check
     //    by the definition of the mechanism itself, BorrowingAmt > newCumBorrowingAmt
-    (remainingCollateralAmt, _) <== IntDivide(BitsAmount())(CollateralAmt * (BorrowingAmt - newCumBorrowingAmt), (BorrowingAmt - 1) * enabled + 1);
+    (remainingCollateralAmt, _) <== IntDivide(BitsAmount())(CollateralAmt * (BorrowingAmt - newCumBorrowingAmt), BorrowingAmt * enabled);
     newCumCollateralAmt <== CollateralAmt - remainingCollateralAmt;
 }
 
@@ -192,7 +192,7 @@ template CalcNewBQ(){
     assert((9 + BitsAmount()) <= ConstFieldBits());
     // Underflow check:
     //      the `denominator` cannot possibly underflow
-    (newBQ, _) <== IntDivide(BitsAmount())((365 * MQ * priceBQ), (denominator - 1) * enabled + 1);
+    (newBQ, _) <== IntDivide(BitsAmount())((365 * MQ * priceBQ), denominator * enabled);
 }
 
 /*
@@ -223,7 +223,7 @@ template CalcSupMQ(){
     // Underflow check:
     //      the `remainDays_priceBQ_avlBQ_Product` cannot possibly underflow
     //      => `avlBQ_days_priceMQ_Product + remainDays_priceBQ_avlBQ_Product` cannot possibly underflow
-    (supMQ, _) <== IntDivide(BitsAmount())(avlBQ_days_priceMQ_Product + remainDays_priceBQ_avlBQ_Product, (365 * priceBQ - 1) * enabled + 1);
+    (supMQ, _) <== IntDivide(BitsAmount())(avlBQ_days_priceMQ_Product + remainDays_priceBQ_avlBQ_Product, (365 * priceBQ) * enabled);
 }
 
 /*
@@ -418,8 +418,8 @@ template AuctionInteract(){
     (newCumLendingAmt, newCumTSBTokenAmt, newCumBorrowingAmt, newCumCollateralAmt) <== AuctionMechanism()(enabled, matchedPIR, lend_req.amount, borrow_req.arg[5], borrow_req.amount, lend.cumAmt0, lend.cumAmt1, borrow.cumAmt1, borrow.cumAmt0, days);
     
     // output the execution result
-    newLend <== OrderLeaf_Place()(lend.req, newCumLendingAmt * enabled, newCumTSBTokenAmt * enabled, lend.txId * enabled, lend.lockedAmt * enabled);
-    newBorrow <== OrderLeaf_Place()(borrow.req, newCumCollateralAmt * enabled, newCumBorrowingAmt * enabled, borrow.txId * enabled, borrow.lockedAmt * enabled);
+    newLend <== OrderLeaf_Place()(lend.req, newCumLendingAmt * enabled, newCumTSBTokenAmt * enabled, lend.txId * enabled, lend.lockedAmt * enabled, lend.cumFeeAmt * enabled, lend.creditAmt * enabled);
+    newBorrow <== OrderLeaf_Place()(borrow.req, newCumCollateralAmt * enabled, newCumBorrowingAmt * enabled, borrow.txId * enabled, borrow.lockedAmt * enabled, borrow.cumFeeAmt * enabled, borrow.creditAmt * enabled);
 }
 
 template SecondaryInteract(){
@@ -457,6 +457,35 @@ template SecondaryInteract(){
     (newCumTakerBuyAmt, newCumTakerSellAmt, newCumMakerBuyAmt, newCumMakerSellAmt) <== SecondMechanism()(enabled, taker_req.opType, taker_req.arg[5], taker_req.amount, maker_req.arg[5], maker_req.amount, maker_req.arg[8], taker.cumAmt1, taker.cumAmt0, maker.cumAmt1, maker.cumAmt0, days);
     
     // output the execution result
-    newTaker <== OrderLeaf_Place()(taker.req, newCumTakerSellAmt * enabled, newCumTakerBuyAmt * enabled, taker.txId * enabled, taker.lockedAmt * enabled);
-    newMaker <== OrderLeaf_Place()(maker.req, newCumMakerSellAmt * enabled, newCumMakerBuyAmt * enabled, maker.txId * enabled, maker.lockedAmt * enabled);
+    newTaker <== OrderLeaf_Place()(taker.req, newCumTakerSellAmt * enabled, newCumTakerBuyAmt * enabled, taker.txId * enabled, taker.lockedAmt * enabled, taker.cumFeeAmt * enabled, taker.creditAmt * enabled);
+    newMaker <== OrderLeaf_Place()(maker.req, newCumMakerSellAmt * enabled, newCumMakerBuyAmt * enabled, maker.txId * enabled, maker.lockedAmt * enabled, maker.cumFeeAmt * enabled, maker.creditAmt * enabled);
+}
+
+template RollInteract(){
+    signal input oriLend[LenOfOrderLeaf()], oriBorrow[LenOfOrderLeaf()], matchedPIR, days, borrowingTokenId;
+    signal output newLend[LenOfOrderLeaf()], newBorrow[LenOfOrderLeaf()];
+    signal output {bool} isMatched;
+    component lend = OrderLeaf();
+    lend.arr <== oriLend;
+    component lend_req = Req();
+    lend_req.arr <== lend.req;
+    component borrow = OrderLeaf();
+    borrow.arr <== oriBorrow;
+    component borrow_req = Req();
+    borrow_req.arr <== borrow.req;
+    signal enabled <== And()(TagIsEqual()([lend_req.opType, OpTypeNumAuctionLend()]), TagIsEqual()([borrow_req.opType, OpTypeNumRollBorrowOrder()]));
+    
+    // Matching condition:
+    // 1. lend_req.arg[1] == borrow_req.arg[1] (maturity time)
+    // 2. borrowingTokenId == lend_req.tokenId (lending token id)
+    // 3. lend_req.arg[3] >= borrow_req.arg[3] (PIR)
+    isMatched <== And()(TagIsEqual()([lend_req.arg[1]/* maturity time */, borrow_req.arg[1]/* maturity time */]), And()(TagIsEqual()([lend_req.tokenId, borrowingTokenId]), TagGreaterEqThan(BitsRatio())([borrow_req.arg[3]/* PIR */, lend_req.arg[3]/* PIR */])));
+    
+    // exec auction mechanism
+    signal newCumLendingAmt, newCumTSBTokenAmt, newCumBorrowingAmt, newCumCollateralAmt;
+    (newCumLendingAmt, newCumTSBTokenAmt, newCumBorrowingAmt, newCumCollateralAmt) <== AuctionMechanism()(enabled, matchedPIR, lend_req.amount, borrow_req.arg[5], borrow_req.amount, lend.cumAmt0, lend.cumAmt1, borrow.cumAmt1, borrow.cumAmt0, days);
+    
+    // output the execution result
+    newLend <== OrderLeaf_Place()(lend.req, newCumLendingAmt * enabled, newCumTSBTokenAmt * enabled, lend.txId * enabled, lend.lockedAmt * enabled, lend.cumFeeAmt * enabled, lend.creditAmt * enabled);
+    newBorrow <== OrderLeaf_Place()(borrow.req, newCumCollateralAmt * enabled, newCumBorrowingAmt * enabled, borrow.txId * enabled, borrow.lockedAmt * enabled, borrow.cumFeeAmt * enabled, 0);
 }
