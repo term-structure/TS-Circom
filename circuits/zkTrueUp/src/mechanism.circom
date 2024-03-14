@@ -418,8 +418,8 @@ template AuctionInteract(){
     (newCumLendingAmt, newCumTSBTokenAmt, newCumBorrowingAmt, newCumCollateralAmt) <== AuctionMechanism()(enabled, matchedPIR, lend_req.amount, borrow_req.arg[5], borrow_req.amount, lend.cumAmt0, lend.cumAmt1, borrow.cumAmt1, borrow.cumAmt0, days);
     
     // output the execution result
-    newLend <== OrderLeaf_Place()(lend.req, newCumLendingAmt * enabled, newCumTSBTokenAmt * enabled, lend.txId * enabled, lend.lockedAmt * enabled, lend.cumFeeAmt * enabled, lend.creditAmt * enabled);
-    newBorrow <== OrderLeaf_Place()(borrow.req, newCumCollateralAmt * enabled, newCumBorrowingAmt * enabled, borrow.txId * enabled, borrow.lockedAmt * enabled, borrow.cumFeeAmt * enabled, borrow.creditAmt * enabled);
+    newLend <== OrderLeaf_Place()(lend.req, newCumLendingAmt * enabled, newCumTSBTokenAmt * enabled, lend.txId * enabled, lend.lockedAmt * enabled);
+    newBorrow <== OrderLeaf_Place()(borrow.req, newCumCollateralAmt * enabled, newCumBorrowingAmt * enabled, borrow.txId * enabled, borrow.lockedAmt * enabled);
 }
 
 template SecondaryInteract(){
@@ -457,8 +457,8 @@ template SecondaryInteract(){
     (newCumTakerBuyAmt, newCumTakerSellAmt, newCumMakerBuyAmt, newCumMakerSellAmt) <== SecondMechanism()(enabled, taker_req.opType, taker_req.arg[5], taker_req.amount, maker_req.arg[5], maker_req.amount, maker_req.arg[8], taker.cumAmt1, taker.cumAmt0, maker.cumAmt1, maker.cumAmt0, days);
     
     // output the execution result
-    newTaker <== OrderLeaf_Place()(taker.req, newCumTakerSellAmt * enabled, newCumTakerBuyAmt * enabled, taker.txId * enabled, taker.lockedAmt * enabled, taker.cumFeeAmt * enabled, taker.creditAmt * enabled);
-    newMaker <== OrderLeaf_Place()(maker.req, newCumMakerSellAmt * enabled, newCumMakerBuyAmt * enabled, maker.txId * enabled, maker.lockedAmt * enabled, maker.cumFeeAmt * enabled, maker.creditAmt * enabled);
+    newTaker <== OrderLeaf_Place()(taker.req, newCumTakerSellAmt * enabled, newCumTakerBuyAmt * enabled, taker.txId * enabled, taker.lockedAmt * enabled);
+    newMaker <== OrderLeaf_Place()(maker.req, newCumMakerSellAmt * enabled, newCumMakerBuyAmt * enabled, maker.txId * enabled, maker.lockedAmt * enabled);
 }
 
 template RollInteract(){
@@ -475,7 +475,7 @@ template RollInteract(){
     borrow_req.arr <== borrow.req;
     signal enabled <== And()(TagIsEqual()([lend_req.opType, OpTypeNumAuctionLend()]), TagIsEqual()([borrow_req.opType, OpTypeNumRollBorrowOrder()]));
     
-    // Matching condition:
+    // // Matching condition:
     // 1. lend_req.arg[1] == borrow_req.arg[1] (maturity time)
     // 2. borrowingTokenId == lend_req.tokenId (lending token id)
     // 3. lend_req.arg[3] >= borrow_req.arg[3] (PIR)
@@ -486,6 +486,6 @@ template RollInteract(){
     (newCumLendingAmt, newCumTSBTokenAmt, newCumBorrowingAmt, newCumCollateralAmt) <== AuctionMechanism()(enabled, matchedPIR, lend_req.amount, borrow_req.arg[5], borrow_req.amount, lend.cumAmt0, lend.cumAmt1, borrow.cumAmt1, borrow.cumAmt0, days);
     
     // output the execution result
-    newLend <== OrderLeaf_Place()(lend.req, newCumLendingAmt * enabled, newCumTSBTokenAmt * enabled, lend.txId * enabled, lend.lockedAmt * enabled, lend.cumFeeAmt * enabled, lend.creditAmt * enabled);
-    newBorrow <== OrderLeaf_Place()(borrow.req, newCumCollateralAmt * enabled, newCumBorrowingAmt * enabled, borrow.txId * enabled, borrow.lockedAmt * enabled, borrow.cumFeeAmt * enabled, 0);
+    newLend <== OrderLeaf_Place()(lend.req, newCumLendingAmt * enabled, newCumTSBTokenAmt * enabled, lend.txId * enabled, lend.lockedAmt * enabled);
+    newBorrow <== OrderLeaf_Place()(borrow.req, newCumCollateralAmt * enabled, newCumBorrowingAmt * enabled, borrow.txId * enabled, borrow.lockedAmt * enabled);
 }

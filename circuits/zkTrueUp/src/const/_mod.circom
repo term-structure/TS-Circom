@@ -41,13 +41,13 @@ function ConstIsAdminReq(){
         1,//WithdrawFee
         1,//Evacuation
         1,//SetAdminTsAddr
-        222,//Evacuation
-        222,//Evacuation
-        222,//Evacuation
-        222,//Evacuation
-        222,//Evacuation
-        222,//Evacuation
-        222 //Evacuation
+        1,//RollBorrowOrder
+        1,//RollOverStart
+        1,//RollOverMatch
+        1,//RollOverEnd
+        0,//UserCancelRollBorrow
+        1,//AdminCancelRollBorrow
+        1 //ForceCancelRollBorrow
     ];
 }
 function ConstChunkCount(){
@@ -62,12 +62,12 @@ function ConstChunkCount(){
         3,//AuctionBorrow
         1,//AuctionStart
         1,//AuctionMatch
-        4,//AuctionEnd
+        5,//AuctionEnd
         4,//SecondLimitOrder
         1,//SecondLimitStart
         1,//SecondLimitExchange
         1,//SecondLimitEnd
-        4,//SecondMarketOrder
+        3,//SecondMarketOrder
         1,//SecondMarketExchange
         1,//SecondMarketEnd
         1,//AdminCancel
@@ -78,13 +78,13 @@ function ConstChunkCount(){
         2,//WithdrawFee
         2,//Evacuation
         1,//SetAdminTsAddr
-        222,//Evacuation
-        222,//Evacuation
-        222,//Evacuation
-        222,//Evacuation
-        222,//Evacuation
-        222,//Evacuation
-        222 //Evacuation
+        6,//RollBorrowOrder
+        1,//RollOverStart
+        1,//RollOverMatch
+        6,//RollOverEnd
+        2,//UserCancelRollBorrow
+        2,//AdminCancelRollBorrow
+        2 //ForceCancelRollBorrow
     ];
 }
 function ConstIsCriticalReq(){
@@ -115,12 +115,12 @@ function ConstIsCriticalReq(){
         1,//WithdrawFee
         1,//Evacuation
         0,//SetAdminTsAddr
-        222,//Evacuation
-        222,//Evacuation
-        222,//Evacuation
-        222,//Evacuation
-        222,//Evacuation
-        222,//Evacuation
-        222 //Evacuation
+        1,//RollBorrowOrder
+        0,//RollOverStart
+        0,//RollOverMatch
+        1,//RollOverEnd
+        1,//UserCancelRollBorrow
+        1,//AdminCancelRollBorrow
+        1 //ForceCancelRollBorrow
     ];
 }

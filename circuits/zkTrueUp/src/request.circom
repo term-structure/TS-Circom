@@ -625,13 +625,10 @@ template DoReqPlaceOrder(){
     signal isNegPIRIf2ndBuy <== And()(is2ndBuy, TagLessThan(BitsAmount())([req.arg[5]/*target amount*/, req.amount]));
 
     var one = 10 ** 8;
-    signal expectedLockFeeAmtIfLend <== AuctionCalcFee()(req.fee0, req.amount, req.arg[9] + one/*default PIR*/, daysFromMatched);
-    signal lockFeeAmtIfLend <== Max(BitsUnsignedAmt())([expectedLockFeeAmtIfLend, req.minFeeAmt0]);
+    signal lockFeeAmtIfLend <== AuctionCalcFee()(req.fee0, req.amount, req.arg[9] + one/*default PIR*/, daysFromMatched);
     var lockAmtIfLend = req.amount + lockFeeAmtIfLend;
     signal expectedSellAmtIf2ndBuy <== CalcNewBQ()(enabled, req.arg[5]/*target amount*/, req.arg[5]/*target amount*/, req.amount, Mux(2)([daysFromExpired, daysFromMatched], isNegPIRIf2ndBuy));
-    signal expectedLockFeeIf2ndBuy <== SecondCalcFee()(req.arg[5]/*target amount*/, Max(BitsRatio())([req.fee0, req.fee1]), daysFromMatched);
-    signal maxMinFeeAmt <== Max(BitsUnsignedAmt())([req.minFeeAmt0, req.minFeeAmt1]);
-    signal lockFeeIf2ndBuy <== Max(BitsUnsignedAmt())([expectedLockFeeIf2ndBuy, maxMinFeeAmt]);
+    signal lockFeeIf2ndBuy <== SecondCalcFee()(req.arg[5]/*target amount*/, Max(BitsRatio())([req.fee0, req.fee1]), daysFromMatched);
     signal lockAmtIf2ndBuy <== expectedSellAmtIf2ndBuy + lockFeeIf2ndBuy;
     signal lock_amt <== Mux(4)([lockAmtIfLend, req.amount, lockAmtIf2ndBuy, req.amount], isLend * 0 + isBorrow * 1 + is2ndBuy * 2 + is2ndSell * 3);
     assert(BitsAmount() + 1 <= ConstFieldBits());
@@ -709,21 +706,17 @@ template DoReqPlaceOrder(){
     // AL-11.Backend adds this order to the order list
     // SL-14.Backend adds this order to the order list
     ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_Default()(), conn.orderLeaf[0][0]);
-    ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_Place()(p_req.req, 0, 0, conn.txId, lock_amt, 0, 0), conn.orderLeaf[0][1]);
+    ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_Place()(p_req.req, 0, 0, conn.txId, lock_amt), conn.orderLeaf[0][1]);
 
     // AB-2. Check if borrowingAmt, feeRate, collateralAmt, PIR can be converted to floating point numbers
     // AL-2. Check if lendingAmt, feeRate, defaultPIR can be converted to floating point numbers
     // SL-2. Check if MQ, BQ, feeRate can be converted to floating point numbers
     signal packedAmount0 <== Fix2FloatCond()(enabled, req.amount);
     signal packedAmount1 <== Fix2FloatCond()(enabled, req.arg[5]/*target amount*/);
-    signal packedFee0 <== Fix2FloatCond()(enabled, req.fee0);
-    signal packedFee1 <== Fix2FloatCond()(enabled, req.fee1);
-    signal packedMinFeeAmt0 <== Fix2FloatCond()(enabled, req.minFeeAmt0);
-    signal packedMinFeeAmt1 <== Fix2FloatCond()(enabled, req.minFeeAmt1);
-
-    Chunkify(9, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtPacked(), FmtPacked(), FmtPacked(), FmtTime(), FmtTime(), FmtPacked()])(And()(enabled, isLend), p_req.chunks, [req.opType, req.accId, req.tokenId, packedAmount0, packedFee0, req.arg[9], req.arg[1]/*maturity time*/, p_req.matchedTime[0], packedMinFeeAmt1]);
-    Chunkify(8, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtPacked(), FmtPacked(), FmtPacked(), FmtTime(), FmtPacked()])(And()(enabled, isBorrow), p_req.chunks, [req.opType, req.accId, req.tokenId, packedAmount0, packedFee0, packedAmount1, p_req.matchedTime[0], packedMinFeeAmt0]);
-    Chunkify(12, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtPacked(), FmtPacked(), FmtPacked(), FmtTokenId(), FmtPacked(), FmtTime(), FmtTime(), FmtPacked(), FmtPacked()])(And()(enabled, is2nd), p_req.chunks, [req.opType, req.accId, req.tokenId, packedAmount0, packedFee0, packedFee1, req.arg[4]/*target token id*/, packedAmount1, req.arg[2]/*expired time*/, p_req.matchedTime[0], packedMinFeeAmt0, packedMinFeeAmt1]);
+    
+    Chunkify(8, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtPacked(), FmtStateRatio(), FmtStateRatio(), FmtTime(), FmtTime()])(And()(enabled, isLend), p_req.chunks, [req.opType, req.accId, req.tokenId, packedAmount0, req.fee0, req.arg[9], req.arg[1]/*maturity time*/, p_req.matchedTime[0]]);
+    Chunkify(7, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtPacked(), FmtStateRatio(), FmtPacked(), FmtTime()])(And()(enabled, isBorrow), p_req.chunks, [req.opType, req.accId, req.tokenId, packedAmount0, req.fee0, packedAmount1, p_req.matchedTime[0]]);
+    Chunkify(10, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtPacked(), FmtStateRatio(), FmtStateRatio(), FmtTokenId(), FmtPacked(), FmtTime(), FmtTime()])(And()(enabled, is2nd), p_req.chunks, [req.opType, req.accId, req.tokenId, packedAmount0, req.fee0, req.fee1, req.arg[4]/*target token id*/, packedAmount1, req.arg[2]/*expired time*/, p_req.matchedTime[0]]);
 
     ImplyEqArr(LenOfChannel())(enabled, channelIn, Channel_Default()());
     for(var i = 0; i < LenOfChannel(); i++)
@@ -783,8 +776,7 @@ template DoReqStart(){
     //      This step will temporarily remove the order from the order tree. It will be reinserted during AuctionEnd or SecondLimitEnd.
     ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_Default()(), conn.orderLeaf[0][1]);
 
-    signal packedPIR <== Fix2FloatCond()(enabled, req.arg[3]/*matched PIR*/);
-    Chunkify(3, [FmtOpcode(), FmtTxOffset(), FmtPacked()])(And()(enabled, isAuctionStart), p_req.chunks, [req.opType, conn.txId - order.txId, packedPIR]);
+    Chunkify(3, [FmtOpcode(), FmtTxOffset(), FmtStateRatio()])(And()(enabled, isAuctionStart), p_req.chunks, [req.opType, conn.txId - order.txId, req.arg[3]/*matched PIR*/]);
     Chunkify(2, [FmtOpcode(), FmtTxOffset()])(And()(enabled, Not()(isAuctionStart)), p_req.chunks, [req.opType, conn.txId - order.txId]);
 
     // AS-0. List orders in a market
@@ -853,16 +845,13 @@ template DoReqSecondMarketOrder(){
     // SM-2. Check if MQ, BQ, makerFeeRate, takerFeeRate can be converted to floating point numbers
     signal packedAmount0 <== Fix2FloatCond()(enabled, req.amount);
     signal packedAmount1 <== Fix2FloatCond()(enabled, req.arg[5]/*target amount*/);
-    signal packedFee0 <== Fix2FloatCond()(enabled, req.fee0);
-    signal packedMinFeeAmt0 <== Fix2FloatCond()(enabled, req.minFeeAmt0);
-    signal packedMinFeeAmt1 <== Fix2FloatCond()(enabled, req.minFeeAmt1);
 
-    Chunkify(10, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtPacked(), FmtPacked(), FmtTokenId(), FmtPacked(), FmtTime(), FmtPacked(), FmtPacked()])(enabled, p_req.chunks, [req.opType, req.accId, req.tokenId, packedAmount0, packedFee0, req.arg[4]/*target token id*/, packedAmount1, req.arg[2]/*expired time*/, packedMinFeeAmt0, packedMinFeeAmt1]);
+    Chunkify(8, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtPacked(), FmtStateRatio(), FmtTokenId(), FmtPacked(), FmtTime()])(enabled, p_req.chunks, [req.opType, req.accId, req.tokenId, packedAmount0, req.fee0, req.arg[4]/*target token id*/, packedAmount1, req.arg[2]/*expired time*/]);
 
     // SM-7. If it's a buy order, check if there is enough BQ in the wallet
     //      This step is checked in DoSecondMarketEnd()
     ImplyEqArr(LenOfChannel())(enabled, channelIn, Channel_Default()());
-    channelOut <== Channel_New()(OrderLeaf_Place()(p_req.req, 0, 0, conn.txId, 0, 0, 0), [0, 0, 0, 0, 0]);
+    channelOut <== Channel_New()(OrderLeaf_Place()(p_req.req, 0, 0, conn.txId, 0), [0, 0, 0, 0, 0]);
 }
 
 /*
@@ -933,7 +922,7 @@ template DoReqInteract(){
     signal isSecondaryLimit <== TagIsEqual()([req.opType, OpTypeNumSecondLimitExchange()]);
     signal isSecondaryMarket <== TagIsEqual()([req.opType, OpTypeNumSecondMarketExchange()]);
     signal isRoll <== TagIsEqual()([req.opType, OpTypeNumRollOverMatch()]);
-    
+
     // AM-5. Perform Interact operation on the specified borrow and lend orders
     // SLI-20. Perform Interaction with the matched buyer's orders and seller's orders
     // SMI-12. Perform Interact on the specified buy order and sell order   
@@ -945,11 +934,11 @@ template DoReqInteract(){
     (newTaker, newMaker, isMatchedIfSecondary) <== SecondaryInteract()(ori_order0.arr, ori_order1.arr, days);
     signal newLendIfRoll[LenOfOrderLeaf()], newBorrowIfRoll[LenOfOrderLeaf()], isMatchedIfRoll;
     (newLendIfRoll, newBorrowIfRoll, isMatchedIfRoll) <== RollInteract()(ori_order1.arr, ori_order0.arr, Mux(2)([1, matchedPIR], isRoll), days, channel_in.args[4]/* borrowing Token Id */);
-    
+
     component new_order0 = OrderLeaf();
-    new_order0.arr <== Multiplexer(LenOfOrderLeaf(), 2)([newTaker, newBorrow], Or()(isAuction, isRoll));
+    new_order0.arr <== Multiplexer(LenOfOrderLeaf(), 3)([newTaker, newBorrow, newBorrowIfRoll], isAuction * 1 + isRoll * 2);
     component new_order1 = OrderLeaf();
-    new_order1.arr <== Multiplexer(LenOfOrderLeaf(), 2)([newMaker, newLend], Or()(isAuction, isRoll));
+    new_order1.arr <== Multiplexer(LenOfOrderLeaf(), 3)([newMaker, newLend, newLendIfRoll], isAuction * 1 + isRoll * 2);
 
     var matched_amt0 = new_order1.cumAmt0 - ori_order1.cumAmt0;
     var matched_amt1 = new_order1.cumAmt1 - ori_order1.cumAmt1;
@@ -958,21 +947,10 @@ template DoReqInteract(){
     // There are two ways to collect fees.
     //      One is deducted from the money originally locked. (feeFromLocked)
     //      The other is deducted from the money obtained this time. (feeFromTarget)
-    assert(BitsUnsignedAmt() + 1 <= ConstFieldBits());
     var one = 10 ** 8;
-    signal expectedFeeFromLocked, expectedFeeFromTarget, expectedFee;
-    (expectedFeeFromLocked, expectedFeeFromTarget, expectedFee) <== CalcFee()(new_order1.arr, enabled, ori_order1.cumAmt0, ori_order1.cumAmt1, p_req.matchedTime[0], tSBToken.maturity, Mux(2)([1, ori_order1_req.arg[9] + one/*default PIR*/], Or()(isAuction, isRoll)));
-
-    signal sltCreditAmtMinFeeAmt1 <== TagLessThan(BitsUnsignedAmt())([ori_order1.creditAmt, ori_order1_req.minFeeAmt1]);
-    signal sgtMinFeeAmt1CumFeeAmt <== TagGreaterThan(BitsUnsignedAmt())([ori_order1_req.minFeeAmt1, ori_order1.cumFeeAmt]);
-    signal newCreditAmt <== (ori_order1_req.minFeeAmt1 - ori_order1.creditAmt) * sltCreditAmtMinFeeAmt1 + ori_order1.creditAmt;
-    signal creditAmtDelta <== Min(BitsUnsignedAmt())([(newCreditAmt - ori_order1.creditAmt) * sltCreditAmtMinFeeAmt1, (newCreditAmt - ori_order1.cumFeeAmt) * sgtMinFeeAmt1CumFeeAmt]);
-    signal sgtAccFeeAmtCreditAmt <== TagGreaterThan(BitsUnsignedAmt())([ori_order1.cumFeeAmt + expectedFee, newCreditAmt]);
-    var cumFeeAmtCreditAmtDiff = (ori_order1.cumFeeAmt + expectedFee - newCreditAmt) * sgtAccFeeAmtCreditAmt;
-    signal feeFromLocked <== Min(BitsUnsignedAmt() + 1)([expectedFeeFromLocked + creditAmtDelta, cumFeeAmtCreditAmtDiff + creditAmtDelta]);
-    signal feeFromTarget <== Min(BitsUnsignedAmt() + 1)([expectedFeeFromTarget + creditAmtDelta, cumFeeAmtCreditAmtDiff + creditAmtDelta]);
-    signal fee <== feeFromLocked + feeFromTarget;
-
+    signal feeFromLocked, feeFromTarget, fee;
+    (feeFromLocked, feeFromTarget, fee) <== CalcFee()(new_order1.arr, enabled, ori_order1.cumAmt0, ori_order1.cumAmt1, p_req.matchedTime[0], tSBToken.maturity, Mux(2)([1, ori_order1_req.arg[9] + one/*default PIR*/], Or()(isAuction, isRoll)));
+    
     signal enabledAndIsAuction <== And()(enabled, isAuction);
     signal enabledAndIsSecondaryLimit <== And()(enabled, isSecondaryLimit);
     signal enabledAndIsSecondaryMarket <== And()(enabled, isSecondaryMarket);
@@ -984,7 +962,7 @@ template DoReqInteract(){
     // SLI-17. Exclude the expired orders
     // SMI-9. Exclude the expired orders
     Req_CheckExpiration()(ori_order1.req, enabled, p_req.matchedTime[0]);
-
+    
     // AS-3. Check if the borrow order with the highest priority matches with the lend order or not. If not, exclude this borrow order and repeat step 2
     ImplyEq()(enabledAndIsAuction, ori_order0_req.opType, OpTypeNumAuctionBorrow());
     ImplyEq()(enabledAndIsAuction, ori_order1_req.opType, OpTypeNumAuctionLend());
@@ -1033,12 +1011,11 @@ template DoReqInteract(){
     // SMI-15. Charge the maker's fee
     // SMI-16. If the maker order is completed, return the remaining locked amt in the order
     assert(BitsAmount() + 1 <= ConstFieldBits());
-    signal newNewOrder1[LenOfOrderLeaf()] <== OrderLeaf_UpdateCreditAmt()(OrderLeaf_UpdateCumFeeAmt()(OrderLeaf_DeductLockedAmt()(new_order1.arr, enabled, feeFromLocked + matched_amt0), enabled, expectedFee), enabled, newCreditAmt);
+    signal newNewOrder1[LenOfOrderLeaf()] <== OrderLeaf_DeductLockedAmt()(new_order1.arr, enabled, feeFromLocked + matched_amt0);
     signal isFull <== OrderLeaf_IsFull()(newNewOrder1);
     component new_new_order1 = OrderLeaf();
     new_new_order1.arr <== newNewOrder1;
     signal refund <== isFull * new_new_order1.lockedAmt;
-
     ImplyEq()(enabled, conn.accLeafId[0], ori_order1_req.accId);
     ImplyEq()(And()(enabled, Or()(isSecondaryLimit, isSecondaryMarket)), conn.tokenLeafId[0], ori_order1_req.arg[4]/*target token id*/);
     ImplyEq()(enabled, conn.tokenLeafId[1], ori_order1_req.tokenId);
@@ -1076,9 +1053,9 @@ template DoReqInteract(){
     Chunkify(2, [FmtOpcode(), FmtTxOffset()])(enabledAndIsRoll, p_req.chunks, [req.opType, conn.txId - ori_order1.txId]);
     Chunkify(2, [FmtOpcode(), FmtTxOffset()])(And()(enabled, Or()(isSecondaryLimit, isSecondaryMarket)), p_req.chunks, [req.opType, conn.txId - ori_order1.txId]);
 
-    signal channelOutIfAuction[LenOfChannel()] <== Channel_New()(newBorrow, [channel_in.args[0]/*oriCumAmt0*/, channel_in.args[1]/*oricumamt1*/, channel_in.args[2], ori_order1_req.arg[3]/*PIR*/, 0]);
-    signal channelOutIfSecondary[LenOfChannel()] <== Channel_New()(newTaker, [channel_in.args[0]/*oriCumAmt0*/, channel_in.args[1]/*oricumamt1*/, channel_in.args[2], 0, 0]);
-    signal channelOutIfRoll[LenOfChannel()] <== Channel_New()(newBorrow, [channel_in.args[0]/*oriCumAmt0*/, channel_in.args[1]/*oricumamt1*/, channel_in.args[2], ori_order1_req.arg[3]/*PIR*/, channel_in.args[2]]);
+    signal channelOutIfAuction[LenOfChannel()] <== Channel_New()(new_order0.arr, [channel_in.args[0]/*oriCumAmt0*/, channel_in.args[1]/*oricumamt1*/, channel_in.args[2], ori_order1_req.arg[3]/*PIR*/, 0]);
+    signal channelOutIfSecondary[LenOfChannel()] <== Channel_New()(new_order0.arr, [channel_in.args[0]/*oriCumAmt0*/, channel_in.args[1]/*oricumamt1*/, channel_in.args[2], 0, 0]);
+    signal channelOutIfRoll[LenOfChannel()] <== Channel_New()(new_order0.arr, [channel_in.args[0]/*oriCumAmt0*/, channel_in.args[1]/*oricumamt1*/, channel_in.args[2], ori_order1_req.arg[3]/*PIR*/, channel_in.args[2]]);
     channelOut <== Multiplexer(LenOfChannel(), 3)([channelOutIfSecondary, channelOutIfAuction, channelOutIfRoll], isSecondaryLimit * 0 + isSecondaryMarket * 0 + isAuction * 1 + isRoll * 2);
 }
 
@@ -1133,19 +1110,8 @@ template DoReqEnd(){
     // There are two ways to collect fees.
     //      One is deducted from the money originally locked. (feeFromLocked)
     //      The other is deducted from the money obtained this time. (feeFromTarget)
-    assert(BitsUnsignedAmt() + 1 <= ConstFieldBits());
-    signal expectedFeeFromLocked, expectedFeeFromTarget, expectedFee;
-    (expectedFeeFromLocked, expectedFeeFromTarget, expectedFee) <== CalcFee()(order.arr, enabled, channel_in.args[0]/*oriCumAmt0*/, channel_in.args[1]/*oricumamt1*/, p_req.matchedTime[0], tSBToken.maturity,  Mux(2)([0, channel_in.args[2]], isAuction));
-
-    signal sltCreditAmtMinFeeAmt0 <== TagLessThan(BitsUnsignedAmt())([order.creditAmt, order_req.minFeeAmt0]);
-    signal sgtMinFeeAmt0CumFeeAmt <== TagGreaterThan(BitsUnsignedAmt())([order_req.minFeeAmt0, order.cumFeeAmt]);
-    signal newCreditAmt <== (order_req.minFeeAmt0 - order.creditAmt) * sltCreditAmtMinFeeAmt0 + order.creditAmt;
-    signal creditAmtDelta <== Min(BitsUnsignedAmt())([(newCreditAmt - order.creditAmt) * sltCreditAmtMinFeeAmt0, (newCreditAmt - order.cumFeeAmt) * sgtMinFeeAmt0CumFeeAmt]);
-    signal sgtAccFeeAmtCreditAmt <== TagGreaterThan(BitsUnsignedAmt())([order.cumFeeAmt + expectedFee, newCreditAmt]);
-    var cumFeeAmtCreditAmtDiff = (order.cumFeeAmt + expectedFee - newCreditAmt) * sgtAccFeeAmtCreditAmt;
-    signal feeFromLocked <== Min(BitsUnsignedAmt() + 1)([expectedFeeFromLocked + creditAmtDelta, cumFeeAmtCreditAmtDiff + creditAmtDelta]);
-    signal feeFromTarget <== Min(BitsUnsignedAmt() + 1)([expectedFeeFromTarget + creditAmtDelta, cumFeeAmtCreditAmtDiff + creditAmtDelta]);
-    signal fee <== feeFromLocked + feeFromTarget;
+    signal feeFromLocked, feeFromTarget, fee;
+    (feeFromLocked, feeFromTarget, fee) <== CalcFee()(order.arr, enabled, channel_in.args[0]/*oriCumAmt0*/, channel_in.args[1]/*oricumamt1*/, p_req.matchedTime[0], tSBToken.maturity,  Mux(2)([0, channel_in.args[2]], isAuction));
     
     var matched_amt0 = order.cumAmt0 - channel_in.args[0]/*oriCumAmt0*/;
     var matched_amt1 = order.cumAmt1 - channel_in.args[1]/*oricumamt1*/;
@@ -1186,7 +1152,7 @@ template DoReqEnd(){
     // SLE-27.If there is no more maker to match with a taker, charge fee from the taker
     // SLE-28.If there is no more maker to match with a taker, and if the taker's order has been completed, return the remaining locked amount in the order
     assert(BitsAmount() + 1 <= ConstFieldBits());
-    signal newOrder[LenOfOrderLeaf()] <== OrderLeaf_UpdateCreditAmt()(OrderLeaf_UpdateCumFeeAmt()(OrderLeaf_DeductLockedAmt()(order.arr, enabled, feeFromLocked + matched_amt0), enabled, expectedFee), enabled, newCreditAmt);
+    signal newOrder[LenOfOrderLeaf()] <== OrderLeaf_DeductLockedAmt()(order.arr, enabled, feeFromLocked + matched_amt0);
     signal isFull <== OrderLeaf_IsFull()(newOrder);
     component new_order = OrderLeaf();
     new_order.arr <== newOrder;
@@ -1216,7 +1182,7 @@ template DoReqEnd(){
     ImplyEqArr(LenOfTSBTokenLeaf())(enabled, conn.tSBTokenLeaf[0][0], conn.tSBTokenLeaf[0][1]);
 
     signal debtAmtIfAuction <== AuctionCalcDebtAmt()(channel_in.args[2], matched_amt1, DaysFrom()(p_req.matchedTime[0], tSBToken.maturity));
-    Chunkify(7, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtStateAmount(), FmtTokenId(), FmtStateAmount(), FmtTime()])(enabledAndIsAuction, p_req.chunks, [req.opType, order_req.accId, order_req.tokenId, matched_amt0, conn.tSBTokenLeafId[0], debtAmtIfAuction, p_req.matchedTime[0]]);
+    Chunkify(8, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtStateAmount(), FmtTokenId(), FmtStateAmount(), FmtTime(), FmtTime()])(enabledAndIsAuction, p_req.chunks, [req.opType, order_req.accId, order_req.tokenId, matched_amt0, tSBToken.baseTokenId, debtAmtIfAuction, p_req.matchedTime[0], tSBToken.maturity]);
     Chunkify(2, [FmtOpcode(), FmtTime()])(And()(enabled, isSecondaryLimit), p_req.chunks, [req.opType, p_req.matchedTime[0]]);
 
     for(var i = 0; i < LenOfChannel(); i++)
@@ -1255,18 +1221,11 @@ template DoReqSecondMarketEnd(){
     component order_req = Req();
     order_req.arr <== order.req;
     
-    assert(BitsUnsignedAmt() + 1 <= ConstFieldBits());
-    signal expectedFeeFromLocked, expectedFeeFromTarget, expectedFee;
-    (expectedFeeFromLocked, expectedFeeFromTarget, expectedFee) <== CalcFee()(order.arr, enabled, channel_in.args[0]/*oriCumAmt0*/, channel_in.args[1]/*oriCumAmt1*/, p_req.matchedTime[0], tSBToken.maturity, channel_in.args[2]);
+    signal feeFromLocked, feeFromTarget, fee;
+    (feeFromLocked, feeFromTarget, fee) <== CalcFee()(order.arr, enabled, channel_in.args[0]/*oriCumAmt0*/, channel_in.args[1]/*oricumamt1*/, p_req.matchedTime[0], tSBToken.maturity, channel_in.args[2]);
     
-    signal sgtAccFeeAmtCreditAmt <== TagGreaterThan(BitsUnsignedAmt())([expectedFee, order_req.minFeeAmt0]);
-    var cumFeeAmtCreditAmtDiff = (expectedFee - order_req.minFeeAmt0) * sgtAccFeeAmtCreditAmt;
-    signal feeFromLocked <== Min(BitsUnsignedAmt() + 1)([expectedFeeFromLocked + order_req.minFeeAmt0, cumFeeAmtCreditAmtDiff + order_req.minFeeAmt0]);
-    signal feeFromTarget <== Min(BitsUnsignedAmt() + 1)([expectedFeeFromTarget + order_req.minFeeAmt0, cumFeeAmtCreditAmtDiff + order_req.minFeeAmt0]);
-    signal fee <== feeFromLocked + feeFromTarget;
-
     var matched_amt0 = order.cumAmt0 - channel_in.args[0]/*oriCumAmt0*/;
-    var matched_amt1 = order.cumAmt1 - channel_in.args[1]/*oriCumAmt1*/;
+    var matched_amt1 = order.cumAmt1 - channel_in.args[1]/*oricumamt1*/;
 
     /* legality */
 
@@ -1338,6 +1297,9 @@ template DoReqAdminCancel(){
     component o_req = Req();
     o_req.arr <== order.req;
 
+    /* legality */
+    ImplyEq()(enabled, 0, TagIsEqual()([o_req.opType, OpTypeNumRollBorrowOrder()]));
+
     /* correctness */
 
     // 2. Backend updates the token leaf
@@ -1393,6 +1355,8 @@ template DoReqUserCancel(){
 
     // 3. Backend checks if the sender has enough balance for the fee
     TokenLeaf_SufficientCheck()(conn.tokenLeaf[1][0], enabled, req.txFeeAmt);
+
+    ImplyEq()(enabled, 0, TagIsEqual()([o_req.opType, OpTypeNumRollBorrowOrder()]));
 
     /* correctness */
     
@@ -1706,9 +1670,9 @@ template DoReqRollBorrowOrder(){
 
     /* correctness */
     // Insert the order into order tree
-    ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_Place()(p_req.req, 0, 0, conn.txId, 0, 0, 0), conn.orderLeaf[0][1]);
+    ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_Place()(p_req.req, 0, 0, conn.txId, 0), conn.orderLeaf[0][1]);
 
-    Chunkify(11, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtStateAmount(), FmtStateRatio(), FmtTokenId(), FmtStateAmount(), FmtTime(), FmtTime(), FmtTime(), FmtStateRatio()])(enabled, p_req.chunks, [req.opType, req.accId, req.tokenId, req.amount, req.fee0, tSBToken.baseTokenId, req.arg[5]/*borrow amt*/, tSBToken.maturity, req.arg[1]/*new maturity*/, req.arg[2]/*expired time*/, req.arg[3]/*PIR*/]);
+    Chunkify(11, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtStateAmount(), FmtStateRatio(), FmtTokenId(), FmtStateAmount(), FmtTime(), FmtTime(), FmtTime(), FmtStateRatio()])(enabled, p_req.chunks, [req.opType, req.arg[0]/*sender id*/, req.tokenId, req.amount, req.fee0, tSBToken.baseTokenId, req.arg[5]/*borrow amt*/, tSBToken.maturity, req.arg[1]/*new maturity*/, req.arg[2]/*expired time*/, req.arg[3]/*PIR*/]);
 
     ImplyEqArr(LenOfChannel())(enabled, channelIn, Channel_Default()());
     for(var i = 0; i < LenOfChannel(); i++)
@@ -1766,7 +1730,7 @@ template DoReqRollOverEnd(){
     p_req.arr <== preprocessedReq;
     component req = Req();
     req.arr <== p_req.req;
-    component conn = Conn(0, 1, 1, 0, 0, 0, 0, 0);// Update order leaf once, access tsb token leaf once
+    component conn = Conn(1, 1, 1, 0, 0, 0, 0, 0);// Update order leaf once, access tsb token leaf once
     (conn.enabled, conn.oriState, conn.newState, conn.unitSet, conn.nullifierTreeId) <== (enabled, oriState, newState, p_req.unitSet, p_req.nullifierTreeId[0]);
     component channel_in = Channel();
     channel_in.arr <== channelIn;
@@ -1799,7 +1763,11 @@ template DoReqRollOverEnd(){
     /* correctness */
     ImplyEqArr(LenOfOrderLeaf())(enabled, order.arr, conn.orderLeaf[0][1]);
 
-    Chunkify(10, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtStateAmount(), FmtTokenId(), FmtTime(), FmtTime(), FmtStateAmount(), FmtTime(), FmtStateAmount()])(enabled, p_req.chunks, [req.opType, order_req.accId, order_req.tokenId, matched_amt0/*matched collateral amount*/, tSBToken.baseTokenId, tSBToken.maturity/*original maturity*/, order_req.arg[1]/*new maturity*/, debtAmt - fee, p_req.matchedTime[0], matched_amt1/*matched borrowing amount*/]);
+    // Charge the fee
+    ImplyEq()(enabled, conn.feeLeafId[0], tSBToken.baseTokenId);
+    ImplyEqArr(LenOfFeeLeaf())(enabled, FeeLeaf_Incoming()(conn.feeLeaf[0][0], enabled, fee), conn.feeLeaf[0][1]);
+
+    Chunkify(10, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtStateAmount(), FmtTokenId(), FmtTime(), FmtTime(), FmtStateAmount(), FmtTime(), FmtStateAmount()])(enabled, p_req.chunks, [req.opType, order_req.arg[0]/*sender id*/, order_req.tokenId, matched_amt0/*matched collateral amount*/, tSBToken.baseTokenId, tSBToken.maturity/*original maturity*/, order_req.arg[1]/*new maturity*/, debtAmt - fee, p_req.matchedTime[0], matched_amt1/*matched borrowing amount*/]);
 
     for(var i = 0; i < LenOfChannel(); i++)
         channelOut[i] <== 0;
@@ -1808,7 +1776,54 @@ template DoReqRollOverEnd(){
 /*
     TODO: add comments.
 */
-template DoReqCancelRollOrder(){
+template DoReqUserCancelRollBorrow(){
+    signal input {bool} enabled;
+    signal input currentTime, channelIn[LenOfChannel()], oriState[LenOfState()], newState[LenOfState()], preprocessedReq[LenOfPreprocessedReq()];
+    signal output channelOut[LenOfChannel()];
+
+    component p_req = PreprocessedReq();
+    p_req.arr <== preprocessedReq;
+    component req = Req();
+    req.arr <== p_req.req;
+    component conn = Conn(0, 1, 1, 1, 0, 0, 0, 0);// Update order leaf once
+    (conn.enabled, conn.oriState, conn.newState, conn.unitSet, conn.nullifierTreeId) <== (enabled, oriState, newState, p_req.unitSet, p_req.nullifierTreeId[0]);
+    component order = OrderLeaf();
+    order.arr <== conn.orderLeaf[0][0];
+    component order_req = Req();
+    order_req.arr <== order.req;
+    component tSBToken = TSBTokenLeaf();
+    tSBToken.arr <== conn.tSBTokenLeaf[0][0];
+
+    /* legality */
+    ImplyEq()(enabled, OpTypeNumRollBorrowOrder(), order_req.opType);
+    
+    Req_CheckExpiration()(order.req, enabled, p_req.matchedTime[0]);
+
+    ImplyEq()(enabled, order_req.arg[0]/*sender id*/, req.accId);
+    ImplyEq()(enabled, Req_Digest()(order.req), req.arg[10]/*order hash*/);
+
+    // Access the TSB token leaf
+    ImplyEq()(enabled, conn.tSBTokenLeafId[0], order_req.arg[4] /*oriTsbTokenId*/);
+    ImplyEqArr(LenOfTSBTokenLeaf())(enabled, conn.tSBTokenLeaf[0][0], conn.tSBTokenLeaf[0][1]);
+
+    // Access the account leaf
+    ImplyEq()(enabled, conn.accLeafId[0], req.accId);
+    ImplyEqArr(LenOfAccLeaf())(enabled, conn.accLeaf[0][0], conn.accLeaf[0][1]);
+
+    /* correctness */
+    ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_Default()(), conn.orderLeaf[0][1]);
+
+    Chunkify(5, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtTokenId(), FmtTime()])(enabled, p_req.chunks, [req.opType, order_req.arg[0]/*sender id*/, tSBToken.baseTokenId, order_req.tokenId, tSBToken.maturity]);
+
+    ImplyEqArr(LenOfChannel())(enabled, channelIn, Channel_Default()());
+    for(var i = 0; i < LenOfChannel(); i++)
+        channelOut[i] <== 0;
+}
+
+/*
+    TODO: add comments.
+*/
+template DoReqCancelRollBorrow(){
     signal input {bool} enabled;
     signal input currentTime, channelIn[LenOfChannel()], oriState[LenOfState()], newState[LenOfState()], preprocessedReq[LenOfPreprocessedReq()];
     signal output channelOut[LenOfChannel()];
@@ -1826,15 +1841,10 @@ template DoReqCancelRollOrder(){
     component tSBToken = TSBTokenLeaf();
     tSBToken.arr <== conn.tSBTokenLeaf[0][0];
 
-    signal isFromUser <== TagIsEqual()([order_req.opType, OpTypeNumUserCancelRollOrder()]);
-
     /* legality */
     ImplyEq()(enabled, OpTypeNumRollBorrowOrder(), order_req.opType);
     
     Req_CheckExpiration()(order.req, enabled, p_req.matchedTime[0]);
-
-    ImplyEq()(isFromUser, order_req.accId, req.accId);
-    ImplyEq()(isFromUser, Req_Digest()(order.req), req.arg[10]/*order hash*/);
 
     // Access the TSB token leaf
     ImplyEq()(enabled, conn.tSBTokenLeafId[0], order_req.arg[4] /*oriTsbTokenId*/);
@@ -1843,7 +1853,7 @@ template DoReqCancelRollOrder(){
     /* correctness */
     ImplyEqArr(LenOfOrderLeaf())(enabled, OrderLeaf_Default()(), conn.orderLeaf[0][1]);
 
-    Chunkify(5, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtTokenId(), FmtTime()])(enabled, p_req.chunks, [req.opType, order_req.accId, tSBToken.baseTokenId, order_req.tokenId, tSBToken.maturity]);
+    Chunkify(5, [FmtOpcode(), FmtAccId(), FmtTokenId(), FmtTokenId(), FmtTime()])(enabled, p_req.chunks, [req.opType, order_req.arg[0]/*sender id*/, tSBToken.baseTokenId, order_req.tokenId, tSBToken.maturity]);
 
     ImplyEqArr(LenOfChannel())(enabled, channelIn, Channel_Default()());
     for(var i = 0; i < LenOfChannel(); i++)

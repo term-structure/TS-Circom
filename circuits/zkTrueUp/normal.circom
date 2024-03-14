@@ -77,9 +77,9 @@ template DoRequest(){
     channel[27] <== DoReqRollOverStart        ()(TagIsEqual()([opType, OpTypeNumRollOverStart()])        , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[28] <== DoReqInteract             ()(TagIsEqual()([opType, OpTypeNumRollOverMatch()])        , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[29] <== DoReqRollOverEnd          ()(TagIsEqual()([opType, OpTypeNumRollOverEnd()])          , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[30] <== DoReqCancelRollOrder      ()(TagIsEqual()([opType, OpTypeNumUserCancelRollOrder()])  , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[31] <== DoReqCancelRollOrder      ()(TagIsEqual()([opType, OpTypeNumAdminCancelRollOrder()]) , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[32] <== DoReqCancelRollOrder      ()(TagIsEqual()([opType, OpTypeNumForceCancelRollOrder()]) , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[30] <== DoReqUserCancelRollBorrow ()(TagIsEqual()([opType, OpTypeNumUserCancelRollBorrow()]) , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[31] <== DoReqCancelRollBorrow     ()(TagIsEqual()([opType, OpTypeNumAdminCancelRollBorrow()]), currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[32] <== DoReqCancelRollBorrow     ()(TagIsEqual()([opType, OpTypeNumForceCancelRollBorrow()]), currentTime, channelIn, oriState, newState, preprocessedReq);
 
     channelOut <== Multiplexer(LenOfChannel(), OpTypeCount())(channel, opType);
 }

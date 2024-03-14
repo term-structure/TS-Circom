@@ -12,7 +12,7 @@ template Req_CheckExpiration(){
     component req_ = Req();
     req_.arr <== req;
 
-    ImplyEq()(enabled, 1, TagLessThan(BitsTime())([currentTime * enabled, req_.arg[2]/*expiration time*/ * enabled]));
+    ImplyEq()(enabled, 1, TagLessThan(BitsTime())([currentTime * enabled, req_.arg[2] * enabled]));
 }
 template Req_DaysFromExpired(){
     signal input req[LenOfReq()], maturityTime;

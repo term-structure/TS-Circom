@@ -30,7 +30,7 @@ function OpTypeNumRollBorrowOrder()      { return 26; }
 function OpTypeNumRollOverStart()        { return 27; }
 function OpTypeNumRollOverMatch()        { return 28; }
 function OpTypeNumRollOverEnd()          { return 29; }
-function OpTypeNumUserCancelRollOrder()  { return 30; }
-function OpTypeNumAdminCancelRollOrder() { return 31; }
-function OpTypeNumForceCancelRollOrder() { return 32; }
+function OpTypeNumUserCancelRollBorrow()  { return 30; }
+function OpTypeNumAdminCancelRollBorrow() { return 31; }
+function OpTypeNumForceCancelRollBorrow() { return 32; }
 function OpTypeCount()                   { return 33; }
