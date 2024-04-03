@@ -356,7 +356,8 @@ template SecondMechanism(){
 
 */
 template CalcFee(){
-    signal input newOrderLeaf[LenOfOrderLeaf()], enabled, oriCumAmt0, oriCumAmt1, matchedTime, maturityTime, arg;
+    signal input newOrderLeaf[LenOfOrderLeaf()], enabled, oriCumAmt0, oriCumAmt1, matchedTime, maturityTime, oriCreditAmt, oriCumFeeAmt, signedMinFeeAmt, arg;
+    signal output feeFromLocked, feeFromTarget, fee, newCreditAmt, expectedFee;
 
     component new_order = OrderLeaf();
     new_order.arr <== newOrderLeaf;
@@ -367,6 +368,8 @@ template CalcFee(){
     signal isBorrow <== TagIsEqual()([req.opType, OpTypeNumAuctionBorrow()]);
     signal isAuction <== Or()(isLend, isBorrow);
     signal isSecondary <== Or()(TagIsEqual()([req.opType, OpTypeNumSecondLimitOrder()]), TagIsEqual()([req.opType, OpTypeNumSecondMarketOrder()]));
+    signal is2ndBuy <== And()(isSecondary, Not()(Bool()(req.arg[8])));
+    signal is2ndSell <== And()(isSecondary, Bool()(req.arg[8]));
 
     var matched_amt0 = new_order.cumAmt0 - oriCumAmt0;
     var matched_amt1 = new_order.cumAmt1 - oriCumAmt1;
@@ -384,13 +387,30 @@ template CalcFee(){
     signal feeRateIf2nd <== (req.fee1 - req.fee0) * arg + req.fee0;
     signal feeIfBuy  <== SecondCalcFee()(matched_amt1, feeRateIf2nd * isSecondary, DaysFrom()(matchedTime, maturityTime));
     signal feeIfSell <== SecondCalcFee()(matched_amt0, feeRateIf2nd * isSecondary, DaysFrom()(matchedTime, maturityTime));
-    signal feeAsBuy  <== feeIfBuy * (1 - req.arg[8]);
-    signal feeAsSell <== feeIfSell * req.arg[8];
+    signal feeAsBuy  <== feeIfBuy * is2ndBuy;
+    signal feeAsSell <== feeIfSell * is2ndSell;
     signal feeIfSecondary <== feeAsBuy + feeAsSell;
 
-    signal output feeFromLocked <== Mux(2)([feeAsBuy, feeAsLend], isAuction);
-    signal output feeFromTarget <== Mux(2)([feeAsSell, feeAsBorrow], isAuction);
-    signal output fee <== feeFromTarget + feeFromLocked;
+    signal expectedFeeFromLocked <== Mux(2)([feeAsBuy, feeAsLend], isAuction);
+    signal expectedFeeFromTarget <== Mux(2)([feeAsSell, feeAsBorrow], isAuction);
+    expectedFee <== expectedFeeFromTarget + expectedFeeFromLocked;
+
+    signal isFeeFromLocked <== Or()(is2ndBuy, isLend);
+    signal isFeeFromTarget <== Or()(is2ndSell, isBorrow);
+    signal minFeeAmt <== Max(BitsUnsignedAmt())([oriCreditAmt, signedMinFeeAmt]);
+    signal maxOriCreditAmtOriCumFeeAmt <== Max(BitsUnsignedAmt())([oriCreditAmt, oriCumFeeAmt]);
+    signal newCreditAmtIfFromTarget <== Min(BitsUnsignedAmt())([minFeeAmt, maxOriCreditAmtOriCumFeeAmt + matched_amt1]);
+    newCreditAmt <== Mux(2)([minFeeAmt, newCreditAmtIfFromTarget], isFeeFromTarget);
+    ImplyEq()(enabled, 1, Or()(TagLessEqThan(BitsUnsignedAmt())([newCreditAmt, minFeeAmt]), TagIsEqual()([newCreditAmt, oriCreditAmt])));
+    ImplyEq()(enabled, 1, TagGreaterEqThan(BitsUnsignedAmt())([newCreditAmt, oriCreditAmt]));
+    signal sgtNewCreditAmtOriCumFeeAmt <== TagGreaterThan(BitsUnsignedAmt())([newCreditAmt, oriCumFeeAmt]);
+    signal chargedCreditAmt <== Min(BitsUnsignedAmt())([newCreditAmt - oriCreditAmt, (newCreditAmt - oriCumFeeAmt) * sgtNewCreditAmtOriCumFeeAmt]);
+    signal newCumFeeAmt <== oriCumFeeAmt + expectedFee;
+    signal sgtNewCumFeeAmtNewCreditAmt <== TagGreaterThan(BitsUnsignedAmt())([newCumFeeAmt, newCreditAmt]);
+    signal chargedFeeAmt <== Min(BitsUnsignedAmt())([expectedFee, (newCumFeeAmt - newCreditAmt) * sgtNewCumFeeAmtNewCreditAmt]);
+    fee <== chargedFeeAmt + chargedCreditAmt;
+    feeFromLocked <== Mux(2)([0, fee], isFeeFromLocked);
+    feeFromTarget <== Mux(2)([0, fee], isFeeFromTarget);
 }
 
 template AuctionInteract(){
@@ -418,8 +438,8 @@ template AuctionInteract(){
     (newCumLendingAmt, newCumTSBTokenAmt, newCumBorrowingAmt, newCumCollateralAmt) <== AuctionMechanism()(enabled, matchedPIR, lend_req.amount, borrow_req.arg[5], borrow_req.amount, lend.cumAmt0, lend.cumAmt1, borrow.cumAmt1, borrow.cumAmt0, days);
     
     // output the execution result
-    newLend <== OrderLeaf_Place()(lend.req, newCumLendingAmt * enabled, newCumTSBTokenAmt * enabled, lend.txId * enabled, lend.lockedAmt * enabled);
-    newBorrow <== OrderLeaf_Place()(borrow.req, newCumCollateralAmt * enabled, newCumBorrowingAmt * enabled, borrow.txId * enabled, borrow.lockedAmt * enabled);
+    newLend <== OrderLeaf_Place()(lend.req, newCumLendingAmt * enabled, newCumTSBTokenAmt * enabled, lend.txId * enabled, lend.lockedAmt * enabled, lend.cumFeeAmt * enabled, lend.creditAmt * enabled);
+    newBorrow <== OrderLeaf_Place()(borrow.req, newCumCollateralAmt * enabled, newCumBorrowingAmt * enabled, borrow.txId * enabled, borrow.lockedAmt * enabled, borrow.cumFeeAmt * enabled, borrow.creditAmt * enabled);
 }
 
 template SecondaryInteract(){
@@ -457,8 +477,8 @@ template SecondaryInteract(){
     (newCumTakerBuyAmt, newCumTakerSellAmt, newCumMakerBuyAmt, newCumMakerSellAmt) <== SecondMechanism()(enabled, taker_req.opType, taker_req.arg[5], taker_req.amount, maker_req.arg[5], maker_req.amount, maker_req.arg[8], taker.cumAmt1, taker.cumAmt0, maker.cumAmt1, maker.cumAmt0, days);
     
     // output the execution result
-    newTaker <== OrderLeaf_Place()(taker.req, newCumTakerSellAmt * enabled, newCumTakerBuyAmt * enabled, taker.txId * enabled, taker.lockedAmt * enabled);
-    newMaker <== OrderLeaf_Place()(maker.req, newCumMakerSellAmt * enabled, newCumMakerBuyAmt * enabled, maker.txId * enabled, maker.lockedAmt * enabled);
+    newTaker <== OrderLeaf_Place()(taker.req, newCumTakerSellAmt * enabled, newCumTakerBuyAmt * enabled, taker.txId * enabled, taker.lockedAmt * enabled, taker.cumFeeAmt * enabled, taker.creditAmt * enabled);
+    newMaker <== OrderLeaf_Place()(maker.req, newCumMakerSellAmt * enabled, newCumMakerBuyAmt * enabled, maker.txId * enabled, maker.lockedAmt * enabled, maker.cumFeeAmt * enabled, maker.creditAmt * enabled);
 }
 
 template RollInteract(){
@@ -486,6 +506,6 @@ template RollInteract(){
     (newCumLendingAmt, newCumTSBTokenAmt, newCumBorrowingAmt, newCumCollateralAmt) <== AuctionMechanism()(enabled, matchedPIR, lend_req.amount, borrow_req.arg[5], borrow_req.amount, lend.cumAmt0, lend.cumAmt1, borrow.cumAmt1, borrow.cumAmt0, days);
     
     // output the execution result
-    newLend <== OrderLeaf_Place()(lend.req, newCumLendingAmt * enabled, newCumTSBTokenAmt * enabled, lend.txId * enabled, lend.lockedAmt * enabled);
-    newBorrow <== OrderLeaf_Place()(borrow.req, newCumCollateralAmt * enabled, newCumBorrowingAmt * enabled, borrow.txId * enabled, borrow.lockedAmt * enabled);
+    newLend <== OrderLeaf_Place()(lend.req, newCumLendingAmt * enabled, newCumTSBTokenAmt * enabled, lend.txId * enabled, lend.lockedAmt * enabled, lend.cumFeeAmt * enabled, lend.creditAmt * enabled);
+    newBorrow <== OrderLeaf_Place()(borrow.req, newCumCollateralAmt * enabled, newCumBorrowingAmt * enabled, borrow.txId * enabled, borrow.lockedAmt * enabled, borrow.cumFeeAmt * enabled, borrow.creditAmt * enabled);
 }

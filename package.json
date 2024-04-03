@@ -1,34 +1,22 @@
 {
-  "name": "term-structure-zk",
+  "name": "zk-circom",
   "version": "1.0.0",
-  "license": "MIT",
   "scripts": {
     "postinstall": "patch-package",
-    "circom:dev": "cross-env NODE_OPTIONS=--max_old_space_size=1024000 && hardhat circom --deterministic --debug --verbose",
-    "circom:prod": "cross-env NODE_OPTIONS=--max_old_space_size=1024000 && hardhat circom --verbose",
-    "eslint": "eslint --ext .ts,.tsx ./ --fix",
-    "test": "cross-env NODE_OPTIONS=--max_old_space_size=1024000 && mocha -r ts-node/register test/*.test.ts -- -f=1",
-    "test:normal": "cross-env NODE_OPTIONS=--max_old_space_size=1024000 && mocha -r ts-node/register test/normal.test.ts -- -f=1",
-    "test:evacuation": "cross-env NODE_OPTIONS=--max_old_space_size=1024000 && mocha -r ts-node/register test/evacuation.test.ts -- -f=1"
+    "test": "cross-env NODE_OPTIONS=\"--max-old-space-size=1024000\" mocha -r ts-node/register test/*.test.ts",
+    "test:normal": "cross-env NODE_OPTIONS=\"--max-old-space-size=1024000\" mocha -r ts-node/register test/normal.test.ts ",
+    "test:evacuation": "cross-env NODE_OPTIONS=\"--max-old-space-size=1024000\" mocha -r ts-node/register test/evacuation.test.ts -- -f=1",
+    "eslint": "eslint --ext .ts,.tsx ./ --fix"
   },
   "dependencies": {
-    "@big-whale-labs/poseidon": "^0.0.5",
-    "circomlib": "^2.0.5",
-    "ethers": "^5.7.0",
-    "ffjavascript": "^0.2.56",
-    "lodash": "^4.17.21",
-    "merkletreejs": "^0.2.32",
-    "term-structure-sdk": "0.1.23"
+    "circomlib": "^2.0.5"
   },
   "devDependencies": {
-    "@guildofweavers/merkle": "^0.3.12",
     "@types/chai": "^4.3.3",
-    "@types/lodash": "^4.14.184",
     "@types/mocha": "^9.1.1",
     "@types/node": "^18.7.14",
     "@typescript-eslint/eslint-plugin": "^5.36.1",
     "@typescript-eslint/parser": "^5.36.1",
-    "blake-hash": "^2.0.0",
     "chai": "^4.3.6",
     "circom_tester": "^0.0.18",
     "circomlibjs": "^0.1.2",
@@ -41,7 +29,5 @@
     "ts-node": "^10.9.1",
     "typescript": "^4.8.2"
   },
-  "engines": {
-    "node": ">=16"
-  }
+  "license": "MIT"
 }

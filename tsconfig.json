@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "lib": [
-      "es2020", "esnext"
+      "es2020",
+      "esnext"
     ],
     "target": "es2020",
     "module": "commonjs",
@@ -14,9 +15,9 @@
     "checkJs": false,
     "allowUnreachableCode": true,
   },
-  "include":[
+  "include": [
     "lib/**/*.ts",
-    "scripts/**/*.js",
+    "scripts/**/*.ts",
     "test/**/*.ts",
     "circuits_src/**/*.ts"
   ]

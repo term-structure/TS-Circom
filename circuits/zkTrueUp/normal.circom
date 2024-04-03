@@ -37,10 +37,10 @@ template DoRequest(){
     var const_is_admin_req[OpTypeCount()] = ConstIsAdminReq();
     signal {bool} isAdminReq <== Bool()(Mux(OpTypeCount())(const_is_admin_req, opType));
     signal {bool} isAdminAddrDefault <== TagIsZero()(ori_state.adminTsAddr);
-    signal tsAddr <== Sig_Verify()(p_req.sig, Or()(Not()(isAdminReq), Not()(isAdminAddrDefault)), Req_Digest()(p_req.req));
+    signal tsAddr <== Sig_Verify()(p_req.sig, And()(Or()(Not()(isAdminReq), Not()(isAdminAddrDefault)), Not()(TagIsZero()(opType))), Req_Digest()(p_req.req));
     
     ImplyEq()(isAdminReq, req_.accId, 0);
-    ImplyEq()(And()(Not()(isAdminAddrDefault), isAdminReq), ori_state.adminTsAddr, tsAddr);
+    ImplyEq()(And()(And()(Not()(isAdminAddrDefault), isAdminReq), Not()(TagIsZero()(opType))), ori_state.adminTsAddr, tsAddr);
     ImplyEq()(Not()(isAdminReq), UnitSet_ExtractSignerTsAddr()(p_req.unitSet), tsAddr);
 
     UnitSet_Enforce()(p_req.unitSet);
@@ -50,7 +50,7 @@ template DoRequest(){
     channel[ 0] <== DoReqNoop                 ()(TagIsEqual()([opType, OpTypeNumNoop()])                 , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[ 1] <== DoReqRegister             ()(TagIsEqual()([opType, OpTypeNumRegister()])             , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[ 2] <== DoReqDeposit              ()(TagIsEqual()([opType, OpTypeNumDeposit()])              , currentTime, channelIn, oriState, newState, preprocessedReq);
-    channel[ 3] <== DoReqForcedWithdraw       ()(TagIsEqual()([opType, OpTypeNumForcedWithdraw()])       , currentTime, channelIn, oriState, newState, preprocessedReq);
+    channel[ 3] <== DoReqForceWithdraw       ()(TagIsEqual()([opType, OpTypeNumForceWithdraw()])       , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[ 4] <== DoReqTransfer             ()(TagIsEqual()([opType, OpTypeNumTransfer()])             , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[ 5] <== DoReqWithdraw             ()(TagIsEqual()([opType, OpTypeNumWithdraw()])             , currentTime, channelIn, oriState, newState, preprocessedReq);
     channel[ 6] <== DoReqPlaceOrder           ()(TagIsEqual()([opType, OpTypeNumAuctionLend()])          , currentTime, channelIn, oriState, newState, preprocessedReq);

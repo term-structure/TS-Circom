@@ -1,0 +1,55 @@
+diff --git a/node_modules/snarkjs/templates/verifier_groth16.sol.ejs b/node_modules/snarkjs/templates/verifier_groth16.sol.ejs
+index 32c260e..d26be87 100644
+--- a/node_modules/snarkjs/templates/verifier_groth16.sol.ejs
++++ b/node_modules/snarkjs/templates/verifier_groth16.sol.ejs
+@@ -63,6 +63,7 @@ contract Groth16Verifier {
+             }
+             
+             // G1 function to multiply a G1 value(x,y) to value in an address
++            // and add it to the value in the address => pR = pR + {x, y} * s
+             function g1_mulAccC(pR, x, y, s) {
+                 let success
+                 let mIn := mload(0x40)
+@@ -92,17 +93,22 @@ contract Groth16Verifier {
+                 let _pPairing := add(pMem, pPairing)
+                 let _pVk := add(pMem, pVk)
+ 
++                // _pVk = {IC0x, IC0y}
+                 mstore(_pVk, IC0x)
+                 mstore(add(_pVk, 32), IC0y)
+ 
+                 // Compute the linear combination vk_x
+-                <% for (let i = 1; i <= nPublic; i++) { %>
+-                g1_mulAccC(_pVk, IC<%=i%>x, IC<%=i%>y, calldataload(add(pubSignals, <%=(i-1)*32%>)))
+-                <% } %>
++                // _pVk += {ICix, ICiy} * pubSignals[i-1]
++                <% for (let i = 1; i <= nPublic; i++) {
++                    if(i === 1)
++                        __append('g1_mulAccC(_pVk, IC1x, IC1y, calldataload(pubSignals))')
++                    else
++                        __append(`g1_mulAccC(_pVk, IC${i}x, IC${i}y, calldataload(add(pubSignals, ${(i-1)*32})))`)
++                } %>
+ 
+                 // -A
+                 mstore(_pPairing, calldataload(pA))
+-                mstore(add(_pPairing, 32), mod(sub(q, calldataload(add(pA, 32))), q))
++                mstore(add(_pPairing, 32), sub(q, mod(calldataload(add(pA, 32)), q)))
+ 
+                 // B
+                 mstore(add(_pPairing, 64), calldataload(pB))
+@@ -151,9 +157,12 @@ contract Groth16Verifier {
+             mstore(0x40, add(pMem, pLastMem))
+ 
+             // Validate that all evaluations ∈ F
+-            <% for (let i=0; i<IC.length; i++) { %>
+-            checkField(calldataload(add(_pubSignals, <%=i*32%>)))
+-            <% } %>
++            <% for (let i=0; i<IC.length-1; i++) {
++                if(i === 0)
++                    __append('checkField(calldataload(_pubSignals))')
++                else
++                    __append(`checkField(calldataload(add(_pubSignals, ${i*32})))`)
++            } %>
+ 
+             // Validate all evaluations
+             let isValid := checkPairing(_pA, _pB, _pC, _pubSignals, pMem)

@@ -24,7 +24,7 @@ function NumOfChunks(){
 
 function DefaultNullifierRoot(){
     //This value is the Root of the Nullifier Tree in our published initial State Tree.
-    return 12657967895078469224578163781222964703015536623478048995515841804870723496262;
+    return 18012398889380698404717924600148162801214704165566367634751429990523171457715;
 }
 
 function TSBTokenTreeHeight(){

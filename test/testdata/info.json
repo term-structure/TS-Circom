@@ -1,164 +1,18 @@
 {
-  "mainCircuitName": "zkTrueUp-8-10-8-6-8-4-32",
+  "mainCircuitName": "zkTrueUp-8-10-8-6-3-4-32",
   "config": {
     "order_tree_height": 8,
     "account_tree_height": 10,
     "token_tree_height": 8,
     "nullifier_tree_height": 6,
-    "fee_tree_height": 8,
+    "fee_tree_height": 3,
     "bond_tree_height": 8,
     "numOfReqs": 4,
     "numOfChunks": 32
   },
-  "mainSuffix": "8-10-8-6-8-4-32",
+  "mainSuffix": "8-10-8-6-3-4-32",
   "outputPath": "./testdata/local-block-230808",
-  "circuitMainPath": "./testdata/zkTrueUp-8-10-8-6-8-4-32/zkTrueUp-8-10-8-6-8-4-32.circom",
-  "fileLogs": [
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "1",
-      "path": "./testdata/local-block-230808/1.inputs.json",
-      "desc": "noop"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "2",
-      "path": "./testdata/local-block-230808/2.inputs.json",
-      "desc": "account 1 register and deposit"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "3",
-      "path": "./testdata/local-block-230808/3.inputs.json",
-      "desc": "account 2 register and deposit"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "4",
-      "path": "./testdata/local-block-230808/4.inputs.json",
-      "desc": "account 3 register and deposit"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "5",
-      "path": "./testdata/local-block-230808/5.inputs.json",
-      "desc": "Transfer request"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "6",
-      "path": "./testdata/local-block-230808/6.inputs.json",
-      "desc": "Withdraw request"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "7",
-      "path": "./testdata/local-block-230808/7.inputs.json",
-      "desc": "Create Bond Token request"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "8",
-      "path": "./testdata/local-block-230808/8.inputs.json",
-      "desc": "place lend order and user cancel order"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "9",
-      "path": "./testdata/local-block-230808/9.inputs.json",
-      "desc": "place borrow order and user cancel order"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "10",
-      "path": "./testdata/local-block-230808/10.inputs.json",
-      "desc": "place lend order and place borrow order"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "11",
-      "path": "./testdata/local-block-230808/11.inputs.json",
-      "desc": "primary match"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "12",
-      "path": "./testdata/local-block-230808/12.inputs.json",
-      "desc": "place secondary limit order"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "13",
-      "path": "./testdata/local-block-230808/13.inputs.json",
-      "desc": "secondary limit match"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "14",
-      "path": "./testdata/local-block-230808/14.inputs.json",
-      "desc": "Increase epoch request"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "15",
-      "path": "./testdata/local-block-230808/15.inputs.json",
-      "desc": "place limit order and admin cancel order"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "16",
-      "path": "./testdata/local-block-230808/16.inputs.json",
-      "desc": "Redeem request"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "17",
-      "path": "./testdata/local-block-230808/17.inputs.json",
-      "desc": "Withdraw Fee request"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "18",
-      "path": "./testdata/local-block-230808/18.inputs.json",
-      "desc": "place lend/borrow order with new epoch"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "19",
-      "path": "./testdata/local-block-230808/19.inputs.json",
-      "desc": "primary match"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "20",
-      "path": "./testdata/local-block-230808/20.inputs.json",
-      "desc": "place limit order and market order"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "21",
-      "path": "./testdata/local-block-230808/21.inputs.json",
-      "desc": "Force withdraw request"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "22",
-      "path": "./testdata/local-block-230808/22.inputs.json",
-      "desc": "Evacuate request"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "23",
-      "path": "./testdata/local-block-230808/23.inputs.json",
-      "desc": "Evacuate request"
-    },
-    {
-      "circuitName": "zkTrueUp-8-10-8-6-8-4-32",
-      "name": "24",
-      "path": "./testdata/local-block-230808/24.inputs.json",
-      "desc": "Noop request"
-    }
-  ],
+  "circuitMainPath": "./testdata/zkTrueUp-8-10-8-6-3-4-32/zkTrueUp-8-10-8-6-3-4-32.circom",
   "metadata": {
     "TsSystemAccountAddress": {
       "BURN_ADDR": "0"

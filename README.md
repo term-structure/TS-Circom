@@ -15,10 +15,3 @@ If you do not need to recompile the circuit, you can run the following command i
 ```
 npx mocha -r ts-node/register test/*.test.ts
 ```
-
-<!-- If yon don't want to run circuits, only generate test data, change enviroment variable `TEST_IS_CIRCUIT_RUN=0` (in `.env` file)
-```
-# .env
-...
-TEST_IS_CIRCUIT_RUN=0
-``` -->

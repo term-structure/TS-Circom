@@ -18,7 +18,7 @@ function ConstIsAdminReq(){
         1,//Noop
         1,//Register
         1,//Deposit
-        1,//ForcedWithdraw
+        1,//ForceWithdraw
         0,//Transfer
         0,//Withdraw
         0,//AuctionLend
@@ -55,7 +55,7 @@ function ConstChunkCount(){
         0,//Noop
         3,//Register
         2,//Deposit
-        2,//ForcedWithdraw
+        2,//ForceWithdraw
         2,//Transfer
         3,//Withdraw
         3,//AuctionLend
@@ -92,7 +92,7 @@ function ConstIsCriticalReq(){
         0,//Noop
         1,//Register
         1,//Deposit
-        1,//ForcedWithdraw
+        1,//ForceWithdraw
         0,//Transfer
         1,//Withdraw
         0,//AuctionLend

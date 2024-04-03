@@ -13,7 +13,7 @@ circuits/zkTrueUp/*.vkey.json
 circuits/zkTrueUp/*.wasm
 circuits/zkTrueUp/*.zkey
 circuits/zkTrueUp/circuit.circom
-testdata
+circuit.circom
 testdata/**/*.r1cs
 testdata/**/*.vkey.json
 testdata/**/*.wasm
