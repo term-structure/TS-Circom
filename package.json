@@ -9,7 +9,8 @@
     "eslint": "eslint --ext .ts,.tsx ./ --fix"
   },
   "dependencies": {
-    "circomlib": "^2.0.5"
+    "circomlib": "^2.0.5",
+    "snarkjs": "^0.7.3"
   },
   "devDependencies": {
     "@types/chai": "^4.3.3",

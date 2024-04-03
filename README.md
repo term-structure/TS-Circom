@@ -2,6 +2,10 @@
 This repository contains an implementation of a zk circuit using circom, designed specifically for zkTrueUp.
 
 ## Test
+Copy `.env.example` to `.env`.
+```
+cp .env.example .env
+```
 Execute the following command at the top level to run tests. 
 ```
 npx mocha -r ts-node/register test/*.test.ts -- -f=1
