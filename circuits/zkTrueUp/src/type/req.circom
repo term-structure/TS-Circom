@@ -12,7 +12,8 @@ template Req_CheckExpiration(){
     component req_ = Req();
     req_.arr <== req;
 
-    ImplyEq()(enabled, 1, TagLessThan(BitsTime())([currentTime * enabled, req_.arg[2]/*expiration time*/ * enabled]));
+    var idx_expiration_time = 2;
+    ImplyEq()(enabled, 1, TagLessThan(BitsTime())([currentTime * enabled, req_.arg[idx_expiration_time] * enabled]));
 }
 template Req_DaysFromExpired(){
     signal input req[LenOfReq()], maturityTime;
@@ -20,5 +21,6 @@ template Req_DaysFromExpired(){
     component req_ = Req();
     req_.arr <== req;
 
-    signal output days <== DaysFrom()(req_.arg[2]/*expiration time*/, maturityTime);
+    var idx_expiration_time = 2;
+    signal output days <== DaysFrom()(req_.arg[idx_expiration_time], maturityTime);
 }
