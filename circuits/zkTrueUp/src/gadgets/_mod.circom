@@ -48,7 +48,7 @@ template ImplyEqArr(len){
         ImplyEq()(enabled, in_0[i], in_1[i]);
 }
 template IntDivide(bits_divisor){
-    // def: if dividend is >= 2^253 or divisor = 0, then the quotient and remainder are both 0
+    // def: if dividend is >= 2^ConstFieldBits() (where `ConstFieldBits()` is 253) or divisor = 0, then the quotient and remainder are both 0
     // No matter what input is given, `intDivide` will always output successfully.
     signal input dividend;
     signal input divisor;
