@@ -368,8 +368,9 @@ template CalcFee(){
     signal isBorrow <== TagIsEqual()([req.opType, OpTypeNumAuctionBorrow()]);
     signal isAuction <== Or()(isLend, isBorrow);
     signal isSecondary <== Or()(TagIsEqual()([req.opType, OpTypeNumSecondLimitOrder()]), TagIsEqual()([req.opType, OpTypeNumSecondMarketOrder()]));
-    signal is2ndBuy <== And()(isSecondary, Not()(Bool()(req.arg[8])));
-    signal is2ndSell <== And()(isSecondary, Bool()(req.arg[8]));
+    var idx_req_is_sell_side = 8;
+    signal is2ndBuy <== And()(isSecondary, Not()(Bool()(req.arg[idx_req_is_sell_side])));
+    signal is2ndSell <== And()(isSecondary, Bool()(req.arg[idx_req_is_sell_side]));
 
     var matched_amt0 = new_order.cumAmt0 - oriCumAmt0;
     var matched_amt1 = new_order.cumAmt1 - oriCumAmt1;
