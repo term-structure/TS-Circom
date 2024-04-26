@@ -396,6 +396,37 @@ template CalcFee(){
     signal expectedFeeFromTarget <== Mux(2)([feeAsSell, feeAsBorrow], isAuction);
     expectedFee <== expectedFeeFromTarget + expectedFeeFromLocked;
 
+    /*  The minimum fee mechanism:
+    
+        This code implements the minimum fee `minFee` agreement mechanism for our orders. When a user signs an order, they agree to a predefined `minFee` amount as the minimum fee. Initially, when an order is matched for the first time, we charge an amount equivalent to the signed `minFee` as an initial credit amount before proceeding with the match.
+
+        As the order continues to be matched repeatedly, the transaction fee required from the user will gradually increase. However, we will only charge the additional fee once the accumulated fee surpasses the credit amount.
+
+        If the fee for an order is charged from `matchedAmt` and the `matchedAmt` of a match is insufficient to cover the credit amount, we will carry over the remaining credit amount to be charged in subsequent matches.
+
+        A special aspect of our mechanism is that an order can play different roles in different matches. For instance, our secondary limit order might be a taker in its first match and a maker in subsequent matches. In such cases, different `minFee` requirements apply depending on the role the order plays. Hence, we have an additional rule: if the signed `minFee` differs from the credit amount and `minFee` is greater, we will charge the difference between the signed `minfee` and the original credit amount and update the credit amount accordingly.
+
+        The following outlines the specific operational flow for implementing the `minFee` mechanism:
+
+        -   Calc `minFee` as the maximum of the following:
+            -   `oriCreditAmt`
+            -   `signedMinFee`
+        -   Calc `newCreditAmt` 
+            -   For the buy order and lend order:
+                -   `newCreditAmt := minFee`
+            -   For the sell order and borrower order:
+                -   `newCreditAmt := Min(minFee, Max(oriCreditAmt, oriCumFeeAmt) + matchedAmt)` 
+        -   Calc `chargedCreditAmt` as the minimum of the following:
+            -   `newCreditAmt` - `oriCreditAmt` 
+            -   `newCreditAmt` > `oriCumFeeAmt ? newCreditAmt - oriCumFeeAmt : 0` 
+        -   Update the accumulated fee amount: `newCumFeeAmt = oriCumFeeAmt + matchedFeeAmt` 
+        -   Calc chargedFeeAmt as the minimum of the following:
+            -   `newCumFeeAmt > newCreditAmt ? newCumFeeAmt - newCreditAmt : 0` 
+            -   `matchedFeeAmt` 
+        -   And the `totalChargedAmt` will be `chargedCreditAmt + chargedFeeAmt` .
+            -   If it's a borrow order or a sell order, circuit will reject when `totalChargedAmt > matchedAmt` 
+    */
+
     signal isFeeFromLocked <== Or()(is2ndBuy, isLend);
     signal isFeeFromTarget <== Or()(is2ndSell, isBorrow);
     signal minFeeAmt <== Max(BitsUnsignedAmt())([oriCreditAmt, signedMinFeeAmt]);
