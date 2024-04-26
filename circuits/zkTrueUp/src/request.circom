@@ -943,10 +943,11 @@ template DoReqInteract(){
     signal newLendIfRoll[LenOfOrderLeaf()], newBorrowIfRoll[LenOfOrderLeaf()], isMatchedIfRoll;
     (newLendIfRoll, newBorrowIfRoll, isMatchedIfRoll) <== RollInteract()(ori_order1.arr, ori_order0.arr, Mux(2)([1, matchedPIR], isRoll), days, channel_in.args[4]/* borrowing Token Id */);
 
+    signal idx <== isAuction * 1 + isRoll * 2;
     component new_order0 = OrderLeaf();
-    new_order0.arr <== Multiplexer(LenOfOrderLeaf(), 3)([newTaker, newBorrow, newBorrowIfRoll], isAuction * 1 + isRoll * 2);
+    new_order0.arr <== Multiplexer(LenOfOrderLeaf(), 3)([newTaker, newBorrow, newBorrowIfRoll], idx);
     component new_order1 = OrderLeaf();
-    new_order1.arr <== Multiplexer(LenOfOrderLeaf(), 3)([newMaker, newLend, newLendIfRoll], isAuction * 1 + isRoll * 2);
+    new_order1.arr <== Multiplexer(LenOfOrderLeaf(), 3)([newMaker, newLend, newLendIfRoll], idx);
 
     var matched_amt0 = new_order1.cumAmt0 - ori_order1.cumAmt0;
     var matched_amt1 = new_order1.cumAmt1 - ori_order1.cumAmt1;
