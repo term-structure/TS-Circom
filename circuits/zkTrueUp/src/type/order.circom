@@ -11,12 +11,9 @@ template OrderLeaf_Place(){
     var order[LenOfOrderLeaf()];
     for(var i = 0; i < LenOfReq(); i++)
         order[i] = req[i];
-    order[LenOfReq() + 0] = txId;
-    order[LenOfReq() + 1] = cumAmt0;
-    order[LenOfReq() + 2] = cumAmt1;
-    order[LenOfReq() + 3] = lockedAmt;
-    order[LenOfReq() + 4] = cumFeeAmt;
-    order[LenOfReq() + 5] = creditAmt;
+    var elems[LenOfOrderLeaf() - LenOfReq()] = [txId, cumAmt0, cumAmt1, lockedAmt, cumFeeAmt, creditAmt];
+    for(var i = 0; i < LenOfOrderLeaf() - LenOfReq(); i++)
+        order[LenOfReq() + i] = elems[i];
     signal output arr[LenOfOrderLeaf()] <== OrderLeaf_Alloc()(order);
 }
 template OrderLeaf_Default(){
