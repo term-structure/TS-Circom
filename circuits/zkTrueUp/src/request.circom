@@ -663,7 +663,7 @@ template DoReqPlaceOrder(){
     
     // AB-5. Check if expiredTime is legal
     // AL-5. Check if t_e is valid
-    ImplyEq()(isAuc, 1, TagLessEqThan(BitsTime() + 1)([req.arg[2] + 86400, tSBToken.maturity]));
+    ImplyEq()(isAuc, 1, TagLessEqThan(BitsTime() + 1)([req.arg[2] + ConstSecondsPerDay(), tSBToken.maturity]));
     
     // SL-5. Check if t_e is valid
     ImplyEq()(is2nd, 1, TagLessEqThan(BitsTime())([req.arg[2], tSBToken.maturity]));
@@ -1501,7 +1501,7 @@ template DoReqCreateTSBToken(){
     ImplyEq()(enabled, 1, TagLessThan(BitsTime())([currentTime - p_req.matchedTime[0], ConstSecondsPerDay()]));
 
     // 2. Backend checks if maturity is within 80 * 365 days
-    ImplyEq()(enabled, 1, TagGreaterThan(BitsTime() + 1)([p_req.matchedTime[0] + 86400 * upper_lim_of_days, tSBToken.maturity]));
+    ImplyEq()(enabled, 1, TagGreaterThan(BitsTime() + 1)([p_req.matchedTime[0] + ConstSecondsPerDay() * upper_lim_of_days, tSBToken.maturity]));
 
     /* correctness */
 
