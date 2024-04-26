@@ -16,13 +16,13 @@ template MultiAnd(n){
     signal input {bool} in[n];
     var sum = 0;
     for(var i = 0; i < n ; i++)
-        sum += in[n];
+        sum += in[i];
     signal output {bool} out <== TagIsEqual()([sum, n]);
 }
 template MultiOr(n){
     signal input {bool} in[n];
     var sum = 0;
     for(var i = 0; i < n ; i++)
-        sum += in[n];
+        sum += in[i];
     signal output {bool} out <== Not()(TagIsEqual()([sum, 0]));
 }

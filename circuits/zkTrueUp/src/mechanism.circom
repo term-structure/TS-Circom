@@ -500,7 +500,11 @@ template RollInteract(){
     // 1. lend_req.arg[1] == borrow_req.arg[1] (maturity time)
     // 2. borrowingTokenId == lend_req.tokenId (lending token id)
     // 3. lend_req.arg[3] >= borrow_req.arg[3] (PIR)
-    isMatched <== And()(TagIsEqual()([lend_req.arg[1]/* maturity time */, borrow_req.arg[1]/* maturity time */]), And()(TagIsEqual()([lend_req.tokenId, borrowingTokenId]), TagGreaterEqThan(BitsRatio())([borrow_req.arg[3]/* PIR */, lend_req.arg[3]/* PIR */])));
+    signal {bool} isMatchedParams[3];
+    isMatchedParams[0] <== TagIsEqual()([lend_req.arg[1]/* maturity time */, borrow_req.arg[1]/* maturity time */]);
+    isMatchedParams[1] <== TagIsEqual()([lend_req.tokenId, borrowingTokenId]);
+    isMatchedParams[2] <== TagGreaterEqThan(BitsRatio())([borrow_req.arg[3]/* PIR */, lend_req.arg[3]/* PIR */]);
+    isMatched <== MultiAnd(3)(isMatchedParams);
     
     // exec auction mechanism
     signal newCumLendingAmt, newCumTSBTokenAmt, newCumBorrowingAmt, newCumCollateralAmt;
