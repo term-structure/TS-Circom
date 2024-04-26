@@ -356,25 +356,33 @@ All units in the [UnitSet](#unit-set) will be enforced, but only a subset of the
 
 ### Minimum Fee Mechanism
 
-To implement the minimum fee mechanism, we have designed two fields in the Order Leaf: `cumFeeAmt` and `creditAmt`. Each time we charge a percentage fee from an order, the following calculation is performed:
+When a user signs an order, they agree to a predefined `minFee` amount as the minimum fee. Initially, when an order is matched for the first time, we charge an amount equivalent to the signed `minFee` as an initial credit amount before proceeding with the match.
 
-1.  Calculate the `minFee` as the maximum of the following:
-    *   `oriCreditAmt`
-    *   `signedMinFee`
-1.  Calculate `newCreditAmt`
-    *   For the buy order and lend order:
-        *   `newCreditAmt := minFee`
-    *   For the sell order and borrow order:
-        *   `newCreditAmt := Min(minFee, oriCreditAmt + matchedAmt)`
-1.  Calculate `chargedCreditAmt` as the minimum of the following:
-    *   `newCreditAmt - oriCreditAmt`
-    *   `newCreditAmt > oriCumFeeAmt ? new CreditAmt - oriCumFeeAmt : 0`
-1.  Update the accumulated fee amount: `newCumFeeAmt = oriCumFeeAmt + matchedFeeAmt`
-1.  Calculate `chargedFeeAmt` as the minimum of the following:
-    1.  `newCumFeeAmt > newCreditAmt ? newCumFeeAmt - newCreditAmt : 0`
-    1.  `matchedFeeAmt`
-1.  And the `totalChargedAmt` will be `chargedCreditAmt + chargedFeeAmt`.
-    1.  If it's a borrow order or a sell order, circuit will reject when `totalChargedAmt > matchedAmt`
+As the order continues to be matched repeatedly, the transaction fee required from the user will gradually increase. However, we will only charge the additional fee once the accumulated fee surpasses the credit amount.
+
+If the fee for an order is charged from `matchedAmt` and the `matchedAmt` of a match is insufficient to cover the credit amount, we will carry over the remaining credit amount to be charged in subsequent matches.
+
+A special aspect of our mechanism is that an order can play different roles in different matches. For instance, our secondary limit order might be a taker in its first match and a maker in subsequent matches. In such cases, different `minFee` requirements apply depending on the role the order plays. Hence, we have an additional rule: if the signed `minFee` differs from the credit amount and `minFee` is greater, we will charge the difference between the signed `minfee` and the original credit amount and update the credit amount accordingly.
+
+The following outlines the specific operational flow for implementing the `minFee` mechanism:
+
+-   Calc `minFee` as the maximum of the following:
+    -   `oriCreditAmt`
+    -   `signedMinFee`
+-   Calc `newCreditAmt` 
+    -   For the buy order and lend order:
+        -   `newCreditAmt := minFee`
+    -   For the sell order and borrower order:
+        -   `newCreditAmt := Min(minFee, Max(oriCreditAmt, oriCumFeeAmt) + matchedAmt)` 
+-   Calc `chargedCreditAmt` as the minimum of the following:
+    -   `newCreditAmt` - `oriCreditAmt` 
+    -   `newCreditAmt` > `oriCumFeeAmt ? newCreditAmt - oriCumFeeAmt : 0` 
+-   Update the accumulated fee amount: `newCumFeeAmt = oriCumFeeAmt + matchedFeeAmt` 
+-   Calc chargedFeeAmt as the minimum of the following:
+    -   `newCumFeeAmt > newCreditAmt ? newCumFeeAmt - newCreditAmt : 0` 
+    -   `matchedFeeAmt` 
+-   And the `totalChargedAmt` will be `chargedCreditAmt + chargedFeeAmt` .
+    -   If it's a borrow order or a sell order, circuit will reject when `totalChargedAmt > matchedAmt` 
 
 ## Specific Constraints for Each Requests
 
