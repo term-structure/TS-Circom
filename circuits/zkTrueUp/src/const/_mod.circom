@@ -13,6 +13,9 @@ function ConstFieldBitsFull(){
 function ConstSecondsPerDay(){
     return 86400;
 }
+function ConstDaysPerYear(){
+    return 365;
+}
 function ConstIsAdminReq(){ 
     return [
         1,//Noop

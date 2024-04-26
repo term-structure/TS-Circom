@@ -671,13 +671,13 @@ template DoReqPlaceOrder(){
     // AB-7. Check interest lower limit
     // (PIR * daysFromMatched + 366 * one) > daysFromMatched * one + PIR
     signal daysFromMatchedIfEnabled <== daysFromMatched * enabled;
-    ImplyEq()(isAuc, 1, TagGreaterEqThan(BitsRatio() + BitsTime() + 1)([req.arg[3]/*PIR*/ * daysFromMatchedIfEnabled + 366 * one, daysFromMatchedIfEnabled * one + req.arg[3]/*PIR*/]));
+    ImplyEq()(isAuc, 1, TagGreaterEqThan(BitsRatio() + BitsTime() + 1)([req.arg[3]/*PIR*/ * daysFromMatchedIfEnabled + (ConstDaysPerYear() + 1) * one, daysFromMatchedIfEnabled * one + req.arg[3]/*PIR*/]));
 
     // SL-7. Check interest lower limit
     // (MQ * daysFromMatched + 365 * BQ) > (BQ * daysFromMatched)
     signal MQ <== Mux(2)([req.arg[5]/*target amount*/, req.amount], is2ndSell);
     signal BQ <== Mux(2)([req.arg[5]/*target amount*/, req.amount], is2ndBuy);
-    ImplyEq()(is2nd, 1, TagGreaterThan(BitsUnsignedAmt() + BitsTime() + 1)([MQ * daysFromMatchedIfEnabled + 365 * BQ, BQ * daysFromMatchedIfEnabled]));
+    ImplyEq()(is2nd, 1, TagGreaterThan(BitsUnsignedAmt() + BitsTime() + 1)([MQ * daysFromMatchedIfEnabled + ConstDaysPerYear() * BQ, BQ * daysFromMatchedIfEnabled]));
 
     /* correctness */
 
