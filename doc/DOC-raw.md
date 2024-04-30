@@ -356,13 +356,13 @@ All units in the [UnitSet](#unit-set) will be enforced, but only a subset of the
 
 ### Minimum Fee Mechanism
 
-When a user signs an order, they agree to a predefined `minFee` amount as the minimum fee. Initially, when an order is matched for the first time, we charge an amount equivalent to the signed `minFee` as an initial credit amount before proceeding with the match.
+When a user signs an order, they consent to the `minFee` amount specified as the minimum fee. Initially, upon the first match of an order, we charge an amount equivalent to the signed `minFee` as an initial credit before proceeding with the matching process.
 
-As the order continues to be matched repeatedly, the transaction fee required from the user will gradually increase. However, we will only charge the additional fee once the accumulated fee surpasses the credit amount.
+As the order continues to match repeatedly, the transaction fee required from the user will gradually increase. However, any additional fees are only charged once the accumulated fees exceed the initial credit amount.
 
-If the fee for an order is charged from `matchedAmt` and the `matchedAmt` of a match is insufficient to cover the credit amount, we will carry over the remaining credit amount to be charged in subsequent matches.
+If the fees for an order are derived from `matchedAmt` and the `matchedAmt` for a match is insufficient to cover the credit amount, the remaining credit will be carried over and charged in subsequent matches.
 
-A special aspect of our mechanism is that an order can play different roles in different matches. For instance, our secondary limit order might be a taker in its first match and a maker in subsequent matches. In such cases, different `minFee` requirements apply depending on the role the order plays. Hence, we have an additional rule: if the signed `minFee` differs from the credit amount and `minFee` is greater, we will charge the difference between the signed `minfee` and the original credit amount and update the credit amount accordingly.
+A unique feature of our mechanism is that an order can assume different roles in various matches. For example, a secondary limit order might act as a taker in its first match and as a maker in later ones. In such scenarios, different `minFee` rates may apply based on the order's role. Therefore, we include an additional rule: if the signed `minFee` differs from the initial credit amount and `minFee` is greater, we will charge the difference between the signed minFee and the original credit, updating the credit amount as needed.   
 
 The following outlines the specific operational flow for implementing the `minFee` mechanism:
 
