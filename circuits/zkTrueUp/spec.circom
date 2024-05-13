@@ -1,34 +1,34 @@
 pragma circom 2.0.2;
 
 function OrderTreeHeight(){
-    return 8;
+    return 24;
 }
 function AccTreeHeight(){
-    return 10;
+    return 32;
 }
 function TokenTreeHeight(){
-    return 8;
+    return 16;
 }
 function NullifierTreeHeight(){
-    return 6;
+    return 24;
 }
 function FeeTreeHeight(){
-    return 3;
+    return 16;
 }
 function NumOfReqs(){
-    return 3;
+    return 256;
 }
 function NumOfChunks(){
-    return 32;
+    return 1024;
 }
 
 function DefaultNullifierRoot(){
     //This value is the Root of the Nullifier Tree in our published initial State Tree.
-    return 18012398889380698404717924600148162801214704165566367634751429990523171457715;
+    return 17442189262588877922573347453104862303711672093150317392397950911190231782258;
 }
 
 function TSBTokenTreeHeight(){
-    return TokenTreeHeight();
+    return 16;
 }
 
 function MinChunksPerReq(){
